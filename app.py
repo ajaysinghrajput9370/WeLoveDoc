@@ -268,7 +268,13 @@ def shipping():
 @app.route("/terms")
 def terms():
     return render_template("terms.html")
+@app.route("/shipping")
+def shipping():
+    return render_template("shipping.html")
 
+@app.route("/refunds")
+def refunds():
+    return render_template("refunds.html")
 # -------------------------
 # Init DB on start
 # -------------------------
