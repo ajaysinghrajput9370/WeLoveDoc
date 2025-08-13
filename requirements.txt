@@ -3,3 +3,4 @@ Werkzeug
 pandas
 openpyxl
 PyMuPDF
+gunicorn
