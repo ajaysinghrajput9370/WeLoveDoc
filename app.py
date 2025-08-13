@@ -4,17 +4,13 @@ import time
 import sqlite3
 import razorpay
 
-RAZORPAY_KEY_ID = "key_secret"      # apna key id yahan daalo
-RAZORPAY_KEY_SECRET = "zN1vvyZIhdC4O35Lad7nvA3H"  # apna secret yahan daalo
-
-razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from highlight import process_files
 from database import get_db_connection, init_db
 
 app = Flask(__name__)
-app.secret_key = "change-this-secret"   # सुरक्षा के लिए इसे बदलें
+app.secret_key = "sOUMU"   # सुरक्षा के लिए इसे बदलें
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
