@@ -261,7 +261,7 @@ def privacy():
 def refunds():
     return render_template("refunds.html")
 
-app.route("/shipping")
+@app.route("/shipping")
 def shipping():
     return render_template("shipping.html")
 
