@@ -67,7 +67,21 @@ def signup():
             conn.close()
     return render_template("signup.html")
 
+import datetime
 
+@app.route('/sitemap.xml')
+def sitemap():
+    lastmod = datetime.date.today().isoformat()
+    sitemap_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://welovedoc.in/</loc>
+        <lastmod>{lastmod}</lastmod>
+        <priority>1.00</priority>
+    </url>
+</urlset>
+"""
+    return sitemap_xml, 200, {'Content-Type': 'application/xml'}
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
