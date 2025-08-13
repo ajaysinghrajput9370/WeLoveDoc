@@ -7,6 +7,35 @@ import os
 razorpay_client = razorpay.Client(
     auth=(os.environ.get("RAZORPAY_KEY_ID"), os.environ.get("RAZORPAY_KEY_SECRET"))
 )
+@app.route("/payment_success", methods=["POST"])
+def payment_success():
+    payment_id = request.form.get("razorpay_payment_id")
+    order_id = request.form.get("razorpay_order_id")
+    signature = request.form.get("razorpay_signature")
+
+    try:
+        params_dict = {
+            'razorpay_order_id': order_id,
+            'razorpay_payment_id': payment_id,
+            'razorpay_signature': signature
+        }
+        razorpay_client.utility.verify_payment_signature(params_dict)
+
+        # Payment success → user subscription update
+        now = int(time.time())
+        expiry = now + 30*24*3600  # 30 din subscription
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute("UPDATE users SET subscription_expiry=? WHERE email=?", (expiry, session.get("email")))
+        conn.commit()
+        conn.close()
+
+        flash("Payment successful! Subscription activated.", "success")
+        return redirect(url_for("index"))
+    except Exception as e:
+        flash(f"Payment verification failed: {str(e)}", "danger")
+        return redirect(url_for("plans"))
+
 
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
