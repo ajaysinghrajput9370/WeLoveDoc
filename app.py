@@ -134,6 +134,55 @@ def subscribe_dummy():
     conn.close()
     flash("Subscription activated for 30 days (demo).", "success")
     return redirect(url_for("index"))
+@app.route("/create_order", methods=["POST"])
+def create_order():
+    amount = int(request.form.get("amount")) * 100  # ₹ → paise
+    currency = "INR"
+    receipt = f"order_rcptid_{int(time.time())}"
+
+    # Razorpay order create
+    razorpay_order = razorpay_client.order.create(dict(
+        amount=amount,
+        currency=currency,
+        receipt=receipt,
+        payment_capture='1'
+    ))
+
+    return render_template("payment.html",
+                           razorpay_order_id=razorpay_order['id'],
+                           razorpay_merchant_key=RAZORPAY_KEY_ID,
+                           amount=amount,
+                           currency=currency,
+                           user_email=session.get("email", ""))
+@app.route("/payment_success", methods=["POST"])
+def payment_success():
+    payment_id = request.form.get("razorpay_payment_id")
+    order_id = request.form.get("razorpay_order_id")
+    signature = request.form.get("razorpay_signature")
+
+    # Optional: verify payment signature
+    try:
+        params_dict = {
+            'razorpay_order_id': order_id,
+            'razorpay_payment_id': payment_id,
+            'razorpay_signature': signature
+        }
+        razorpay_client.utility.verify_payment_signature(params_dict)
+
+        # Payment successful → update user subscription
+        now = int(time.time())
+        expiry = now + 30*24*3600  # 30 days subscription example
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute("UPDATE users SET subscription_expiry=? WHERE email=?", (expiry, session.get("email")))
+        conn.commit()
+        conn.close()
+
+        flash("Payment successful! Subscription activated.", "success")
+        return redirect(url_for("index"))
+    except Exception as e:
+        flash(f"Payment verification failed: {str(e)}", "danger")
+        return redirect(url_for("plans"))
 
 # -------------------------
 # Plans page (show plan chart here)
