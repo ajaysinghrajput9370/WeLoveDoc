@@ -1,13 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Shipping Policy - We ❤️ Doc</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
+{% block content %}
+<div class="container" style="padding: 50px;">
     <h1>Shipping Policy</h1>
-    <p>We ❤️ Doc is a digital service. No physical shipping is involved. All services are delivered instantly via our web platform.</p>
-    <a href="/">⬅ Back to Home</a>
-</body>
-</html>
+    <p>हमारी वेबसाइट डिजिटल सेवाएँ प्रदान करती है। किसी भी भौतिक उत्पाद की डिलीवरी नहीं होती।</p>
+    <p>सभी सर्विसेज ऑनलाइन उपलब्ध हैं और आपकी खरीद के तुरंत बाद उपयोग के लिए तैयार होती हैं।</p>
+</div>
+{% endblock %}
