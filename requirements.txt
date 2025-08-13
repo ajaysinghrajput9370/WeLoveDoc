@@ -4,3 +4,4 @@ pandas
 openpyxl
 PyMuPDF
 gunicorn
+pip install razorpay
