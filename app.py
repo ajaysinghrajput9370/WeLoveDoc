@@ -284,6 +284,25 @@ def highlight_route():
 
     # Redirect to result download page (or show inline)
     return render_template("result.html", out_pdf=out_pdf, not_found_excel=not_found_excel)
+@app.route("/create_order", methods=["POST"])
+def create_order():
+    amount = int(request.form.get("amount")) * 100  # ₹ → paise
+    currency = "INR"
+    receipt = f"order_rcptid_{int(time.time())}"
+
+    razorpay_order = razorpay_client.order.create(dict(
+        amount=amount,
+        currency=currency,
+        receipt=receipt,
+        payment_capture='1'
+    ))
+
+    return render_template("payment.html",
+                           razorpay_order_id=razorpay_order['id'],
+                           razorpay_merchant_key=os.environ.get("RAZORPAY_KEY_ID"),
+                           amount=amount,
+                           currency=currency,
+                           user_email=session.get("email", ""))
 
 @app.route("/download_pdf")
 def download_pdf():
