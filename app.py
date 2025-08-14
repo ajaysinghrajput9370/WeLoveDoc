@@ -3,7 +3,7 @@ import os
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from highlight import process_files  # तुम्हारा existing highlight logic
+from highlight import process_files  # tumhara existing highlight logic
 
 app = Flask(__name__)
 app.secret_key = "sOUMU"
@@ -80,9 +80,11 @@ def logout():
     session.pop("username", None)
     flash("Logged out successfully", "info")
     return redirect(url_for("index"))
+
 @app.route("/plans")
 def plans():
     return render_template("plans.html")
+
 @app.route("/upload", methods=["POST"])
 def upload():
     if "username" not in session:
@@ -96,8 +98,8 @@ def upload():
         flash("Please upload both PDF and Excel files", "danger")
         return redirect(url_for("index"))
 
-    pdf_path = os.path.join(UPLOAD_FOLDER, pdf_file.filename)
-    excel_path = os.path.join(UPLOAD_FOLDER, excel_file.filename)
+    pdf_path = os.path.join(UPLOAD_FOLDER, secure_filename(pdf_file.filename))
+    excel_path = os.path.join(UPLOAD_FOLDER, secure_filename(excel_file.filename))
 
     pdf_file.save(pdf_path)
     excel_file.save(excel_path)
