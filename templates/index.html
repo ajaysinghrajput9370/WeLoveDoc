@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="card">
-  <h2 style="margin-top:0">UAN/ESIC Highlighter</h2>
+  <h2 style="margin-top:0">UAN / ESIC Highlighter</h2>
 
   {% if user %}
-    <p>Welcome, <b>{{ user }}</b> — Tasks used: <b>{{ tasks_done }}</b>{% if is_subscribed %} (Subscribed){% else %} (Free: 2 tasks limit){% endif %}</p>
+    <p>Welcome, <b>{{ user }}</b> — Tasks used: <b>{{ tasks_done }}</b>
+      {% if is_subscribed %} <span style="color:green">(Subscribed)</span>{% else %} <span style="color:#666">(Free: 2 tasks)</span>{% endif %}
+    </p>
 
     <form method="post" action="{{ url_for('highlight_route') }}" enctype="multipart/form-data">
       <div class="row">
