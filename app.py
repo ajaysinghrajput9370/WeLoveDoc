@@ -3,7 +3,7 @@ import os
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from highlight import process_files  # Tumhara existing highlight logic
+from highlight import process_files  # Existing highlight logic
 
 app = Flask(__name__)
 app.secret_key = "sOUMU"
@@ -98,20 +98,16 @@ def logout():
 
 # ------------------ Static Info Pages ------------------
 @app.route("/about")
-def about():
-    return render_template("about.html")
+def about(): return render_template("about.html")
 
 @app.route("/privacy")
-def privacy():
-    return render_template("privacy.html")
+def privacy(): return render_template("privacy.html")
 
 @app.route("/terms")
-def terms():
-    return render_template("terms.html")
+def terms(): return render_template("terms.html")
 
 @app.route("/plans")
-def plans():
-    return render_template("plans.html")
+def plans(): return render_template("plans.html")
 
 # Dummy pages for footer links
 @app.route("/refund")
@@ -143,12 +139,14 @@ def highlight_route():
     excel_file.save(excel_path)
 
     try:
-        result_pdf, result_excel = process_files(pdf_path, excel_path, RESULT_FOLDER, highlight_type)
+        # Call process_files from highlight.py
+        result_pdf, result_excel = process_files(pdf_path, excel_path, highlight_type, RESULT_FOLDER)
     except Exception as e:
         flash(f"Error processing files: {e}", "danger")
         return redirect(url_for("index"))
 
-    flash("Files processed successfully!", "success")
+    # Success message
+    flash("Files processed successfully! Your highlighted PDF will download now.", "success")
     return send_file(result_pdf, as_attachment=True)
 
 # ------------------ Run App ------------------
