@@ -81,12 +81,26 @@ def logout():
     flash("Logged out successfully", "info")
     return redirect(url_for("index"))
 
+# ------------------ Policy & Info Pages ------------------
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
+
 @app.route("/plans")
 def plans():
     return render_template("plans.html")
 
-@app.route("/upload", methods=["POST"])
-def upload():
+# ------------------ File Upload & Highlight ------------------
+@app.route("/highlight", methods=["POST"])
+def highlight_route():
     if "username" not in session:
         flash("Please log in to use this feature", "warning")
         return redirect(url_for("login"))
