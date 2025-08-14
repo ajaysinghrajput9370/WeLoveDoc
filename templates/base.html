@@ -98,7 +98,7 @@
       animation: scroll-left 15s linear infinite;
     }
     @keyframes scroll-left {
-      0% { transform: translateX(100%); }
+      0% { transform: translateX(0); }
       100% { transform: translateX(-100%); }
     }
     /* Footer */
@@ -145,30 +145,6 @@
         <span class="heart">❤️</span>
         <span>We <strong>❤️</strong> Doc</span>
       </div>
-<!-- Flash messages -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <div style="max-width:1000px; margin: auto; margin-top:10px;">
-      {% for category, message in messages %}
-        <div style="
-            padding: 12px;
-            margin-bottom: 6px;
-            border-radius: 6px;
-            color: white;
-            font-weight: bold;
-            text-align: center;
-            {% if category == 'success' %} background-color: #4CAF50; 
-            {% elif category == 'danger' %} background-color: #f44336; 
-            {% elif category == 'warning' %} background-color: #ff9800; 
-            {% elif category == 'info' %} background-color: #2196F3; 
-            {% else %} background-color: #777; {% endif %}
-        ">
-          {{ message }}
-        </div>
-      {% endfor %}
-    </div>
-  {% endif %}
-{% endwith %}
 
       {% if user %}
         <div class="user-info">
@@ -198,6 +174,31 @@
       </div>
     </div>
   </div>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div style="max-width:1000px; margin: auto; margin-top:10px;">
+        {% for category, message in messages %}
+          <div style="
+              padding: 12px;
+              margin-bottom: 6px;
+              border-radius: 6px;
+              color: white;
+              font-weight: bold;
+              text-align: center;
+              {% if category == 'success' %} background-color: #4CAF50; 
+              {% elif category == 'danger' %} background-color: #f44336; 
+              {% elif category == 'warning' %} background-color: #ff9800; 
+              {% elif category == 'info' %} background-color: #2196F3; 
+              {% else %} background-color: #777; {% endif %}
+          ">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
 
   {% block content %}{% endblock %}
 
