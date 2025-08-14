@@ -1,24 +1,20 @@
-from datetime import timedelta
-
-app.permanent_session_lifetime = timedelta(days=365)  # 1 saal tak login rahega
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
-
-        conn = get_db_connection()
-        user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-        conn.close()
-
-        if user and check_password_hash(user["password"], password):
-            session.permanent = True  # 🔹 Login ko permanent banaya
-            session["user_id"] = user["id"]
-            session["email"] = user["email"]
-            flash("Login successful", "success")
-            return redirect(url_for("dashboard"))
-        else:
-            flash("Invalid email or password", "danger")
-
-    return render_template("login.html")
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="max-width:420px;margin:auto">
+  <h3 style="margin-top:0;text-align:center">Login</h3>
+  <form method="post">
+    <div style="margin-bottom:10px">
+      <input name="email" type="email" placeholder="Email" required>
+    </div>
+    <div style="margin-bottom:10px">
+      <input name="password" type="password" placeholder="Password" required>
+    </div>
+    <div style="text-align:center">
+      <button class="btn btn-primary" type="submit">Login</button>
+    </div>
+  </form>
+  <div style="text-align:center;margin-top:12px">
+    <a href="{{ url_for('signup') }}">New here? Create an account</a>
+  </div>
+</div>
+{% endblock %}
