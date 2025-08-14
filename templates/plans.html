@@ -1,102 +1,15 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Subscription Plans - We ❤️ Doc</title>
-  <style>
-    .plan-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      font-family: "Segoe UI", Arial, sans-serif;
-    }
-    .plan-table th, .plan-table td {
-      padding: 14px 12px;
-      border: 1px solid #eee;
-      text-align: center;
-    }
-    .plan-table th {
-      background: linear-gradient(90deg, #E53935, #FF6F61);
-      color: white;
-      font-size: 16px;
-    }
-    .plan-table tr:nth-child(even) {
-      background: #fff5f5;
-    }
-    .plan-table tr:hover {
-      background: #ffeaea;
-    }
-    .subscribe-btn {
-      background: #E53935;
-      color: white;
-      padding: 8px 14px;
-      border-radius: 6px;
-      font-weight: bold;
-      text-decoration: none;
-      transition: background 0.2s;
-    }
-    .subscribe-btn:hover {
-      background: #C62828;
-    }
-  </style>
-</head>
-<body>
-  <h2 style="text-align:center;">Subscription Plans</h2>
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="max-width:720px;margin:auto">
+  <h3 style="margin-top:0;text-align:center">Choose a Plan</h3>
 
-  <table class="plan-table">
-    <thead>
-      <tr>
-        <th>Duration (Months)</th>
-        <th>Devices</th>
-        <th>Price (₹)</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>1</td>
-        <td>1 Device</td>
-        <td>₹299</td>
-        <td>
-          <form action="/create_order" method="POST" style="margin:0;">
-            <input type="hidden" name="amount" value="299">
-            <button type="submit" class="subscribe-btn">Subscribe</button>
-          </form>
-        </td>
-      </tr>
-      <tr>
-        <td>1</td>
-        <td>2 Devices</td>
-        <td>₹499</td>
-        <td>
-          <form action="/create_order" method="POST" style="margin:0;">
-            <input type="hidden" name="amount" value="499">
-            <button type="submit" class="subscribe-btn">Subscribe</button>
-          </form>
-        </td>
-      </tr>
-      <tr>
-        <td>3</td>
-        <td>1 Device</td>
-        <td>₹799</td>
-        <td>
-          <form action="/create_order" method="POST" style="margin:0;">
-            <input type="hidden" name="amount" value="799">
-            <button type="submit" class="subscribe-btn">Subscribe</button>
-          </form>
-        </td>
-      </tr>
-      <tr>
-        <td>3</td>
-        <td>2 Devices</td>
-        <td>₹1199</td>
-        <td>
-          <form action="/create_order" method="POST" style="margin:0;">
-            <input type="hidden" name="amount" value="1199">
-            <button type="submit" class="subscribe-btn">Subscribe</button>
-          </form>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</body>
-</html>
+  {% if not razorpay_enabled %}
+    <div class="flash info">Payment gateway not configured. Set <code>RAZORPAY_KEY_ID</code> & <code>RAZORPAY_KEY_SECRET</code>.</div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('create_order') }}" style="text-align:center">
+    <p><b>Monthly</b> — ₹ <input style="width:100px" name="amount" value="49" required> / month</p>
+    <button class="btn btn-primary" type="submit" {% if not razorpay_enabled %}disabled{% endif %}>Pay with Razorpay</button>
+  </form>
+</div>
+{% endblock %}
