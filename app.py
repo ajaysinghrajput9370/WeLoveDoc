@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, send_file, session, flash
 import os
 import uuid
+from werkzeug.utils import secure_filename
 from highlight import process_files  # Tumhara existing highlight logic
 
 app = Flask(__name__)
@@ -26,7 +27,7 @@ def highlight_route():
     excel_file = request.files["excel_file"]
     highlight_type = request.form.get("highlight_type")
 
-    if pdf_file.filename == "" or excel_file.filename == "":
+    if pdf_file.filename.strip() == "" or excel_file.filename.strip() == "":
         flash("Invalid file selection", "danger")
         return redirect(url_for("index"))
 
@@ -45,7 +46,6 @@ def highlight_route():
     # Process using your highlight.py
     process_files(pdf_path, excel_path, highlight_type, out_pdf_path, not_found_excel_path)
 
-    # Pass file names (not full paths) to result page
     return render_template(
         "result.html",
         out_pdf=out_pdf_name if os.path.exists(out_pdf_path) else None,
@@ -71,3 +71,6 @@ def download_excel():
     else:
         flash("Excel file not found", "danger")
         return redirect(url_for("index"))
+
+if __name__ == "__main__":
+    app.run(debug=True)
