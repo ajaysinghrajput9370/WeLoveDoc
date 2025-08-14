@@ -1,23 +1,34 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Payment</title>
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <title>Payment - We ❤️ Doc</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f9f9f9; }
+        h2 { color: #333; }
+        .payment-box { background: #fff; display: inline-block; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+    </style>
 </head>
 <body>
-  <form action="/payment_success" method="POST">
-    <script
-      src="https://checkout.razorpay.com/v1/checkout.js"
-      data-key="{{ razorpay_merchant_key }}"
-      data-amount="{{ amount }}"
-      data-currency="{{ currency }}"
-      data-order_id="{{ razorpay_order_id }}"
-      data-buttontext="Pay Now"
-      data-name="We ❤️ Doc"
-      data-description="Subscription Payment"
-      data-prefill.email="{{ user_email }}"
-      data-theme.color="#E53935">
-    </script>
-  </form>
+    <div class="payment-box">
+        <h2>Pay for Subscription</h2>
+        <p>Amount: ₹{{ amount // 100 }}</p>
+
+        <form action="/payment_success" method="POST">
+            <script
+                src="https://checkout.razorpay.com/v1/checkout.js"
+                data-key="{{ razorpay_merchant_key }}"
+                data-amount="{{ amount }}"
+                data-currency="{{ currency }}"
+                data-order_id="{{ razorpay_order_id }}"
+                data-buttontext="Pay Now"
+                data-name="We ❤️ Doc"
+                data-description="Subscription Payment"
+                data-prefill.email="{{ user_email }}"
+                data-theme.color="#E53935">
+            </script>
+            <input type="hidden" custom="Hidden Element" name="hidden">
+        </form>
+    </div>
 </body>
 </html>
