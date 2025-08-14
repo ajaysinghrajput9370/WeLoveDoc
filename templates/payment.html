@@ -1,34 +1,40 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Payment - We ❤️ Doc</title>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f9f9f9; }
-        h2 { color: #333; }
-        .payment-box { background: #fff; display: inline-block; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
-    </style>
-</head>
-<body>
-    <div class="payment-box">
-        <h2>Pay for Subscription</h2>
-        <p>Amount: ₹{{ amount // 100 }}</p>
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="max-width:480px;margin:auto;text-align:center">
+  <h3 style="margin-top:0">Complete Payment</h3>
+  <p>Amount: ₹ {{ (amount or 0) // 100 }}</p>
 
-        <form action="/payment_success" method="POST">
-            <script
-                src="https://checkout.razorpay.com/v1/checkout.js"
-                data-key="{{ razorpay_merchant_key }}"
-                data-amount="{{ amount }}"
-                data-currency="{{ currency }}"
-                data-order_id="{{ razorpay_order_id }}"
-                data-buttontext="Pay Now"
-                data-name="We ❤️ Doc"
-                data-description="Subscription Payment"
-                data-prefill.email="{{ user_email }}"
-                data-theme.color="#E53935">
-            </script>
-            <input type="hidden" custom="Hidden Element" name="hidden">
-        </form>
-    </div>
-</body>
-</html>
+  <button id="rzp-button" class="btn btn-primary">Pay Now</button>
+
+  <form id="success-form" method="post" action="{{ url_for('payment_success') }}" style="display:none">
+    <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+    <input type="hidden" name="razorpay_order_id" id="razorpay_order_id" value="{{ razorpay_order_id }}">
+    <input type="hidden" name="razorpay_signature" id="razorpay_signature">
+  </form>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  const options = {
+    "key": "{{ razorpay_merchant_key }}",
+    "amount": "{{ amount|int }}",
+    "currency": "INR",
+    "name": "We ❤️ Doc",
+    "description": "Subscription",
+    "order_id": "{{ razorpay_order_id }}",
+    "prefill": { "email": "{{ user_email or '' }}" },
+    "handler": function (response){
+        document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+        document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
+        document.getElementById('razorpay_signature').value = response.razorpay_signature;
+        document.getElementById('success-form').submit();
+    },
+    "theme": { "color": "#e53935" }
+  };
+  document.getElementById('rzp-button').onclick = function(e){
+    var rzp1 = new Razorpay(options);
+    rzp1.open();
+    e.preventDefault();
+  }
+</script>
+{% endblock %}
