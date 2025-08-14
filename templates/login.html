@@ -1,20 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container" style="max-width:420px;">
-  <h3 style="text-align:center;">Login</h3>
+<div class="card" style="max-width:420px;margin:auto">
+  <h3 style="margin-top:0;text-align:center">Login</h3>
   <form method="post">
     <div style="margin-bottom:10px">
-      <input name="email" placeholder="Email" required style="width:100%;padding:10px;border-radius:6px;border:1px solid #ddd" />
+      <input name="email" type="email" placeholder="Email" required>
     </div>
     <div style="margin-bottom:10px">
-      <input type="password" name="password" placeholder="Password" required style="width:100%;padding:10px;border-radius:6px;border:1px solid #ddd" />
+      <input name="password" type="password" placeholder="Password" required>
     </div>
     <div style="text-align:center">
-      <button class="btn signup-btn" type="submit">Login</button>
+      <button class="btn btn-primary" type="submit">Login</button>
     </div>
   </form>
-  <p style="text-align:center;margin-top:10px;">
-    <a href="{{ url_for('signup') }}">Create an account</a>
-  </p>
+  <div style="text-align:center;margin-top:12px">
+    <a href="{{ url_for('signup') }}">New here? Create an account</a>
+  </div>
 </div>
 {% endblock %}
