@@ -7,9 +7,12 @@
     <div class="flash info">Payment gateway not configured. Set <code>RAZORPAY_KEY_ID</code> & <code>RAZORPAY_KEY_SECRET</code>.</div>
   {% endif %}
 
-  <form method="post" action="{{ url_for('create_order') }}" style="text-align:center">
-    <p><b>Monthly</b> — ₹ <input style="width:100px" name="amount" value="49" required> / month</p>
-    <button class="btn btn-primary" type="submit" {% if not razorpay_enabled %}disabled{% endif %}>Pay with Razorpay</button>
+  <form method="post" action="{{ url_for('create_order') }}">
+    <div style="display:flex;gap:12px;align-items:center;justify-content:center">
+      <label><input name="amount" value="49" style="width:80px"> ₹ / month</label>
+      <input type="hidden" name="plan" value="monthly">
+      <button class="btn btn-primary" type="submit" {% if not razorpay_enabled %}disabled{% endif %}>Pay with Razorpay</button>
+    </div>
   </form>
 </div>
 {% endblock %}
