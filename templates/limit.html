@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card" style="text-align:center">
+  <h3 style="margin-top:0;color:#d32f2f">Free task limit reached (2/2)</h3>
+  <p>Please subscribe to continue.</p>
+  <a class="btn btn-primary" href="{{ url_for('plans') }}">View Plans</a>
+</div>
+{% endblock %}
