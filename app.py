@@ -1,174 +1,94 @@
-# app.py — WeLoveDoc full app (email/password login/signup, subscription, Razorpay optional, highlight)
-import os
-import time
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
-import datetime
-from datetime import timedelta
-from functools import wraps
-
-from flask import (
-    Flask, render_template, request, send_file,
-    redirect, url_for, session, flash, abort
-)
-from werkzeug.utils import secure_filename
+import razorpay
 from werkzeug.security import generate_password_hash, check_password_hash
+import os
 
-# Optional: Razorpay (if installed and keys provided)
-try:
-    import razorpay
-except Exception:
-    razorpay = None
-
-# Optional highlight processor (user-provided). If missing, app still runs.
-try:
-    from highlight import process_files
-except Exception:
-    process_files = None
-
-# -------------------------
-# App config
-# -------------------------
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "change_this_to_a_long_random_secret")
-app.permanent_session_lifetime = timedelta(days=365)  # Keep session until explicit logout
+app.secret_key = "super_secret_key"  # Change this in production
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
-STATIC_DIR = os.path.join(BASE_DIR, "static")
-DB_PATH = os.path.join(BASE_DIR, "users.db")
+# Razorpay keys (replace with your own)
+RAZORPAY_KEY_ID = "rzp_test_xxxxxxx"
+RAZORPAY_KEY_SECRET = "xxxxxxxx"
+razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(STATIC_DIR, exist_ok=True)
+DB_FILE = "database.db"
 
-# -------------------------
-# Database helpers
-# -------------------------
-def get_db_connection():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    return conn
 
+# -------------------- DATABASE INIT --------------------
 def init_db():
-    """Create users table if not present."""
-    conn = get_db_connection()
-    conn.execute("""
+    with sqlite3.connect(DB_FILE) as conn:
+        c = conn.cursor()
+        # Users table
+        c.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            name TEXT,
-            tasks_done INTEGER DEFAULT 0,
-            subscription_expiry INTEGER,
+            subscription TEXT DEFAULT 'free'
+        )
+        """)
+        # Payments table
+        c.execute("""
+        CREATE TABLE IF NOT EXISTS payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            plan TEXT,
+            amount INTEGER,
+            payment_id TEXT,
+            status TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
-    conn.commit()
-    conn.close()
+        )
+        """)
+        conn.commit()
 
-# Auto init DB at import/start
-init_db()
 
-@app.before_first_request
-def ensure_db():
-    init_db()
+# -------------------- DB CONNECTION --------------------
+def get_db_connection():
+    conn = sqlite3.connect(DB_FILE)
+    conn.row_factory = sqlite3.Row
+    return conn
 
-# -------------------------
-# Razorpay init (optional)
-# -------------------------
-RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID")
-RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET")
-razorpay_client = None
-if razorpay and RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
-    try:
-        razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
-    except Exception:
-        razorpay_client = None
 
-# -------------------------
-# Utilities
-# -------------------------
-def clean_old_uploads(folder, max_age_minutes=60):
-    now = time.time()
-    max_age = max_age_minutes * 60
-    for fn in os.listdir(folder):
-        path = os.path.join(folder, fn)
-        try:
-            if os.path.isfile(path) and (now - os.path.getmtime(path) > max_age):
-                os.remove(path)
-        except Exception:
-            pass
+# -------------------- HOME --------------------
+@app.route("/")
+def home():
+    return render_template("home.html")
 
-def save_uploaded_file(file_storage):
-    name = secure_filename(file_storage.filename or "")
-    if not name:
-        name = f"upload_{int(time.time())}"
-    base, ext = os.path.splitext(name)
-    n = 1
-    candidate = name
-    while os.path.exists(os.path.join(UPLOAD_FOLDER, candidate)):
-        n += 1
-        candidate = f"{base}_{n}{ext}"
-    path = os.path.join(UPLOAD_FOLDER, candidate)
-    file_storage.save(path)
-    return candidate, path
 
-def is_subscribed(row):
-    if not row: 
-        return False
-    try:
-        exp = row["subscription_expiry"]
-        return bool(exp and int(exp) > int(time.time()))
-    except Exception:
-        return False
-
-def login_required(f):
-    @wraps(f)
-    def wrapper(*a, **kw):
-        if "user_id" not in session:
-            flash("Please login first.", "warning")
-            return redirect(url_for("login"))
-        return f(*a, **kw)
-    return wrapper
-
-@app.before_request
-def make_session_permanent_if_logged_in():
-    if "user_id" in session:
-        session.permanent = True
-
-# -------------------------
-# AUTH: Signup / Login / Logout
-# -------------------------
+# -------------------- SIGNUP --------------------
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
-        email = (request.form.get("email") or "").strip().lower()
-        password = request.form.get("password") or ""
-        name = (request.form.get("name") or "").strip() or None
+        email = request.form["email"].strip().lower()
+        password = request.form["password"]
 
         if not email or not password:
-            flash("Email and Password are required.", "danger")
-            return render_template("signup.html")
+            flash("Email and password are required", "error")
+            return redirect(url_for("signup"))
+
+        hashed_pw = generate_password_hash(password)
 
         try:
-            hashed = generate_password_hash(password)
             conn = get_db_connection()
-            conn.execute("INSERT INTO users (email, password, name) VALUES (?, ?, ?)", (email, hashed, name))
+            conn.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, hashed_pw))
             conn.commit()
             conn.close()
-            flash("Signup successful! Please login.", "success")
+            flash("Account created! Please log in.", "success")
             return redirect(url_for("login"))
         except sqlite3.IntegrityError:
-            flash("Email is already registered.", "danger")
-        except Exception as e:
-            flash(f"Error: {e}", "danger")
+            flash("Email already exists", "error")
+            return redirect(url_for("signup"))
 
     return render_template("signup.html")
 
+
+# -------------------- LOGIN --------------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = (request.form.get("email") or "").strip().lower()
-        password = request.form.get("password") or ""
+        email = request.form["email"].strip().lower()
+        password = request.form["password"]
 
         conn = get_db_connection()
         user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
@@ -177,188 +97,97 @@ def login():
         if user and check_password_hash(user["password"], password):
             session["user_id"] = user["id"]
             session["email"] = user["email"]
-            session["user_name"] = user["name"]
-            flash("Logged in successfully!", "success")
-            return redirect(url_for("index"))
+            session["subscription"] = user["subscription"]
+            flash("Login successful!", "success")
+            return redirect(url_for("dashboard"))
         else:
-            flash("Invalid email or password.", "danger")
+            flash("Invalid email or password", "error")
 
     return render_template("login.html")
 
+
+# -------------------- LOGOUT --------------------
 @app.route("/logout")
 def logout():
     session.clear()
-    flash("You have been logged out.", "info")
-    return redirect(url_for("login"))
+    flash("Logged out successfully", "success")
+    return redirect(url_for("home"))
 
-# -------------------------
-# INDEX / Dashboard
-# -------------------------
-@app.route("/")
-def index():
-    user_email = None
-    is_sub = False
-    tasks_done = 0
-    if "user_id" in session:
-        conn = get_db_connection()
-        row = conn.execute("SELECT email, tasks_done, subscription_expiry FROM users WHERE id=?", (session["user_id"],)).fetchone()
-        conn.close()
-        if row:
-            user_email = row["email"]
-            tasks_done = row["tasks_done"] or 0
-            is_sub = is_subscribed(row)
 
-    return render_template("index.html", user=user_email, tasks_done=tasks_done, is_subscribed=is_sub, razorpay_enabled=bool(razorpay_client))
+# -------------------- DASHBOARD --------------------
+@app.route("/dashboard")
+def dashboard():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    return render_template("dashboard.html", user=session)
 
-# -------------------------
-# Highlight route
-# -------------------------
-@app.route("/highlight", methods=["POST"])
-@login_required
-def highlight_route():
-    if not process_files:
-        flash("Highlight feature not configured on server.", "danger")
-        return redirect(url_for("index"))
+
+# -------------------- SUBSCRIPTION PLANS --------------------
+@app.route("/plans")
+def plans():
+    return render_template("plans.html")
+
+
+# -------------------- CREATE PAYMENT --------------------
+@app.route("/create_order/<plan>")
+def create_order(plan):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    plans_price = {
+        "monthly": 29900,  # in paise (₹299)
+        "quarterly": 79900,  # ₹799
+        "yearly": 299900  # ₹2999
+    }
+
+    if plan not in plans_price:
+        flash("Invalid plan", "error")
+        return redirect(url_for("plans"))
+
+    amount = plans_price[plan]
+    order = razorpay_client.order.create({"amount": amount, "currency": "INR", "payment_capture": "1"})
 
     conn = get_db_connection()
-    row = conn.execute("SELECT tasks_done, subscription_expiry FROM users WHERE id=?", (session["user_id"],)).fetchone()
-    conn.close()
-    subscribed = is_subscribed(row)
-    tasks_done = (row["tasks_done"] or 0) if row else 0
-    if (not subscribed) and tasks_done >= 2:
-        return render_template("limit.html"), 403
-
-    clean_old_uploads(UPLOAD_FOLDER)
-
-    pdf_file = request.files.get("pdf_file")
-    excel_file = request.files.get("excel_file")
-    highlight_type = request.form.get("highlight_type")
-    if not pdf_file or not excel_file or highlight_type not in {"uan", "esic"}:
-        flash("Please upload PDF & Excel and select UAN/ESIC.", "danger")
-        return redirect(url_for("index"))
-
-    pdf_name, pdf_path = save_uploaded_file(pdf_file)
-    excel_name, excel_path = save_uploaded_file(excel_file)
-
-    out_pdf_path, not_found_excel_path = process_files(pdf_path=pdf_path, excel_path=excel_path, mode=highlight_type, output_dir=UPLOAD_FOLDER)
-
-    # increment usage count
-    conn = get_db_connection()
-    conn.execute("UPDATE users SET tasks_done = COALESCE(tasks_done,0) + 1 WHERE id=?", (session["user_id"],))
+    conn.execute("INSERT INTO payments (user_id, plan, amount, payment_id, status) VALUES (?, ?, ?, ?, ?)",
+                 (session["user_id"], plan, amount, order["id"], "created"))
     conn.commit()
     conn.close()
 
-    return render_template("result.html", out_pdf=os.path.basename(out_pdf_path) if out_pdf_path else None, not_found_excel=os.path.basename(not_found_excel_path) if not_found_excel_path else None)
+    return render_template("payment.html", order=order, plan=plan, amount=amount / 100, key_id=RAZORPAY_KEY_ID)
 
-# -------------------------
-# Downloads
-# -------------------------
-@app.route("/download_pdf")
-@login_required
-def download_pdf():
-    filename = request.args.get("file", "")
-    if not filename:
-        abort(404)
-    path = os.path.join(UPLOAD_FOLDER, os.path.basename(filename))
-    if not (os.path.exists(path) and os.path.isfile(path)):
-        abort(404)
-    return send_file(path, as_attachment=True)
 
-@app.route("/download_excel")
-@login_required
-def download_excel():
-    filename = request.args.get("file", "")
-    if not filename:
-        abort(404)
-    path = os.path.join(UPLOAD_FOLDER, os.path.basename(filename))
-    if not (os.path.exists(path) and os.path.isfile(path)):
-        abort(404)
-    return send_file(path, as_attachment=True)
-
-# -------------------------
-# Plans & Razorpay
-# -------------------------
-@app.route("/plans")
-@login_required
-def plans():
-    return render_template("plans.html", razorpay_enabled=bool(razorpay_client))
-
-@app.route("/create_order", methods=["POST"])
-@login_required
-def create_order():
-    if not razorpay_client:
-        flash("Payment gateway not configured.", "danger")
-        return redirect(url_for("plans"))
-
-    try:
-        amount_rupees = int(request.form.get("amount", "0"))
-    except ValueError:
-        amount_rupees = 0
-    if amount_rupees <= 0:
-        flash("Invalid amount.", "danger")
-        return redirect(url_for("plans"))
-
-    amount_paise = amount_rupees * 100
-    receipt = f"rcpt_{int(time.time())}_{session['user_id']}"
-    order = razorpay_client.order.create(dict(amount=amount_paise, currency="INR", receipt=receipt, payment_capture='1'))
-    return render_template("payment.html", razorpay_merchant_key=RAZORPAY_KEY_ID, razorpay_order_id=order["id"], amount=amount_paise, currency="INR", user_email=session.get("email",""))
-
+# -------------------- PAYMENT SUCCESS --------------------
 @app.route("/payment_success", methods=["POST"])
-@login_required
 def payment_success():
-    if not razorpay_client:
-        flash("Payment gateway not configured.", "danger")
-        return redirect(url_for("plans"))
-
     payment_id = request.form.get("razorpay_payment_id")
     order_id = request.form.get("razorpay_order_id")
     signature = request.form.get("razorpay_signature")
-    try:
-        razorpay_client.utility.verify_payment_signature({
-            "razorpay_order_id": order_id,
-            "razorpay_payment_id": payment_id,
-            "razorpay_signature": signature
-        })
-        expiry = int(time.time()) + 30*24*3600
-        conn = get_db_connection()
-        conn.execute("UPDATE users SET subscription_expiry=? WHERE id=?", (expiry, session["user_id"]))
-        conn.commit()
-        conn.close()
-        flash("Payment successful! Subscription activated for 30 days.", "success")
-        return redirect(url_for("index"))
-    except Exception as e:
-        flash(f"Payment verification failed: {e}", "danger")
-        return redirect(url_for("plans"))
 
-# -------------------------
-# Simple pages & sitemap
-# -------------------------
-@app.route("/about"): def about(): return render_template("page.html", title="About", content="About We ❤️ Doc")
-@app.route("/contact"): def contact(): return render_template("page.html", title="Contact", content="Contact us at support@welovedoc.in")
-@app.route("/privacy"): def privacy(): return render_template("page.html", title="Privacy Policy", content="Your privacy is important to us.")
-@app.route("/refunds");: def refunds(): return render_template("page.html", title="Refund Policy", content="Refund policy details here.")
-@app.route("/shipping");: def shipping(): return render_template("page.html", title="Shipping Policy", content="Digital product. No shipping.")
-@app.route("/terms"); def terms(): return render_template("page.html", title="Terms", content="Terms of service details here.")
+    # Here, ideally verify payment signature from Razorpay
 
-@app.route("/favicon.ico")
-def favicon():
-    path = os.path.join(STATIC_DIR, "favicon.ico")
-    if os.path.exists(path):
-        return send_file(path)
-    abort(404)
+    conn = get_db_connection()
+    conn.execute("UPDATE payments SET status = ? WHERE payment_id = ?", ("paid", order_id))
+    conn.execute("UPDATE users SET subscription = ? WHERE id = ?", ("paid", session["user_id"]))
+    conn.commit()
+    conn.close()
 
-@app.route("/sitemap.xml")
-def sitemap():
-    lastmod = datetime.date.today().isoformat()
-    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://welovedoc.in/</loc><lastmod>{lastmod}</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>
-</urlset>"""
-    return xml, 200, {"Content-Type": "application/xml"}
+    session["subscription"] = "paid"
+    flash("Payment successful! Subscription activated.", "success")
+    return redirect(url_for("dashboard"))
 
-# -------------------------
-# Run
-# -------------------------
+
+# -------------------- SIMPLE PAGES --------------------
+@app.route("/about")
+def about():
+    return render_template("page.html", title="About", content="About We ❤️ Doc")
+
+
+@app.route("/contact")
+def contact():
+    return render_template("page.html", title="Contact", content="Contact us at support@welovedoc.in")
+
+
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
