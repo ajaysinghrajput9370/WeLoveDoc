@@ -1,97 +1,35 @@
 {% extends "base.html" %}
 {% block content %}
-<style>
-  h2 {
-    text-align: center;
-    margin-top: 0;
-    color: #E53935;
-    font-weight: bold;
-  }
-  .file-row {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 20px;
-  }
-  .file-card {
-    flex: 1 1 300px;
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    text-align: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .file-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-  }
-  .file-card strong {
-    font-size: 18px;
-    color: #E53935;
-  }
-  .file-card p {
-    color: #666;
-  }
-  .file-card input[type="file"]::-webkit-file-upload-button {
-    background: #E53935;
-    color: white;
-    border: none;
-    padding: 8px 14px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-  }
-  .submit-btn {
-    display: inline-block;
-    background: linear-gradient(90deg, #E53935, #FF6F61);
-    color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: bold;
-    margin-top: 18px;
-    cursor: pointer;
-  }
-  .note-text {
-    text-align: center;
-    color: #777;
-    margin-top: 12px;
-  }
-</style>
+<div class="card">
+  <h2 style="margin-top:0">UAN/ESIC Highlighter</h2>
 
-<div class="container">
-  <h2>UAN / ESIC Highlighter</h2>
+  {% if user %}
+    <p>Welcome, <b>{{ user }}</b> — Tasks used: <b>{{ tasks_done }}</b>{% if is_subscribed %} (Subscribed){% else %} (Free: 2 tasks limit){% endif %}</p>
 
-  <form action="{{ url_for('highlight_route') }}" method="post" enctype="multipart/form-data">
-    <div class="file-row">
-      <div class="file-card">
-        <strong>Select PDF</strong>
-        <p>Upload ECR-style PDF</p>
-        <input type="file" name="pdf_file" accept=".pdf" />
+    <form method="post" action="{{ url_for('highlight_route') }}" enctype="multipart/form-data">
+      <div class="row">
+        <div class="col">
+          <label>Select PDF</label>
+          <input type="file" name="pdf_file" accept="application/pdf" required>
+        </div>
+        <div class="col">
+          <label>Select Excel (first column = UAN/ESIC)</label>
+          <input type="file" name="excel_file" accept=".xls,.xlsx" required>
+        </div>
+        <div class="col">
+          <label>Type</label>
+          <select name="highlight_type" required>
+            <option value="uan">UAN</option>
+            <option value="esic">ESIC</option>
+          </select>
+        </div>
       </div>
-
-      <div class="file-card">
-        <strong>Select Excel</strong>
-        <p>UAN/ESIC number must be in first column</p>
-        <input type="file" name="excel_file" accept=".xls,.xlsx" />
+      <div style="margin-top:16px">
+        <button type="submit" class="btn btn-primary">Highlight</button>
       </div>
-    </div>
-
-    <div style="text-align:center;margin-top:18px;">
-      <label><input type="radio" name="highlight_type" value="uan" checked /> UAN</label>
-      &nbsp;&nbsp;
-      <label><input type="radio" name="highlight_type" value="esic" /> ESIC</label>
-    </div>
-
-    <div style="text-align:center;">
-      <button class="submit-btn" type="submit">Highlight Now</button>
-    </div>
-
-    {% if not is_subscribed %}
-      <p class="note-text">Free users: 2 tasks/month. <a href="{{ url_for('plans') }}">See plans</a></p>
-    {% endif %}
-  </form>
+    </form>
+  {% else %}
+    <p>Please <a href="{{ url_for('login') }}">login</a> to use the highlighter.</p>
+  {% endif %}
 </div>
 {% endblock %}
