@@ -1,33 +1,37 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card">
+<div class="card" style="text-align:center;max-width:700px;margin:auto;">
   <h2 style="margin-top:0">UAN / ESIC Highlighter</h2>
 
   {% if user %}
     <p>Welcome, <b>{{ user }}</b> — Tasks used: <b>{{ tasks_done }}</b>
-      {% if is_subscribed %} <span style="color:green">(Subscribed)</span>{% else %} <span style="color:#666">(Free: 2 tasks)</span>{% endif %}
+      {% if is_subscribed %} 
+        <span style="color:green">(Subscribed)</span>
+      {% else %} 
+        <span style="color:#666">(Free: 2 tasks)</span>
+      {% endif %}
     </p>
 
     <form method="post" action="{{ url_for('highlight_route') }}" enctype="multipart/form-data">
       <div class="row">
         <div class="col">
-          <label>Select PDF</label>
-          <input type="file" name="pdf_file" accept="application/pdf" required>
+          <label style="font-weight:bold;">Select PDF</label>
+          <input type="file" name="pdf_file" accept="application/pdf" required style="border:2px solid #ff4b2b;">
         </div>
         <div class="col">
-          <label>Select Excel (first column = UAN/ESIC)</label>
-          <input type="file" name="excel_file" accept=".xls,.xlsx" required>
+          <label style="font-weight:bold;">Select Excel (first column = UAN/ESIC)</label>
+          <input type="file" name="excel_file" accept=".xls,.xlsx" required style="border:2px solid #ff4b2b;">
         </div>
         <div class="col">
-          <label>Type</label>
-          <select name="highlight_type" required>
+          <label style="font-weight:bold;">Type</label>
+          <select name="highlight_type" required style="border:2px solid #ff4b2b;">
             <option value="uan">UAN</option>
             <option value="esic">ESIC</option>
           </select>
         </div>
       </div>
-      <div style="margin-top:16px">
-        <button type="submit" class="btn btn-primary">Highlight</button>
+      <div style="margin-top:20px">
+        <button type="submit" class="btn btn-primary" style="width:200px;">Highlight</button>
       </div>
     </form>
   {% else %}
