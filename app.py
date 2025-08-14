@@ -333,11 +333,11 @@ def payment_success():
 # -------------------------
 # Simple pages & sitemap
 # -------------------------
-@app.route("/about"); def about(): return render_template("page.html", title="About", content="About We ❤️ Doc")
-@app.route("/contact"); def contact(): return render_template("page.html", title="Contact", content="Contact us at support@welovedoc.in")
-@app.route("/privacy"); def privacy(): return render_template("page.html", title="Privacy Policy", content="Your privacy is important to us.")
-@app.route("/refunds"); def refunds(): return render_template("page.html", title="Refund Policy", content="Refund policy details here.")
-@app.route("/shipping"); def shipping(): return render_template("page.html", title="Shipping Policy", content="Digital product. No shipping.")
+@app.route("/about"): def about(): return render_template("page.html", title="About", content="About We ❤️ Doc")
+@app.route("/contact"): def contact(): return render_template("page.html", title="Contact", content="Contact us at support@welovedoc.in")
+@app.route("/privacy"): def privacy(): return render_template("page.html", title="Privacy Policy", content="Your privacy is important to us.")
+@app.route("/refunds");: def refunds(): return render_template("page.html", title="Refund Policy", content="Refund policy details here.")
+@app.route("/shipping");: def shipping(): return render_template("page.html", title="Shipping Policy", content="Digital product. No shipping.")
 @app.route("/terms"); def terms(): return render_template("page.html", title="Terms", content="Terms of service details here.")
 
 @app.route("/favicon.ico")
