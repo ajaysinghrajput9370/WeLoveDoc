@@ -6,3 +6,10 @@ PyMuPDF
 gunicorn
 razorpay
 setuptools
+Flask>=2.0
+werkzeug>=2.0
+pandas
+PyMuPDF
+openpyxl
+# razorpay is optional, include only if you use payments:
+razorpay
