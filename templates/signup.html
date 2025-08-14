@@ -1,23 +1,26 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="card" style="max-width:420px;margin:auto">
-  <h3 style="margin-top:0;text-align:center">Sign up</h3>
-  <form method="post">
-    <div style="margin-bottom:10px">
-      <input name="name" placeholder="Full name (optional)">
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sign Up - We ❤️ Doc</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+<body class="d-flex justify-content-center align-items-center vh-100" style="background:#f5f7fa;">
+    <div class="card shadow p-4" style="width: 400px; border-radius: 15px;">
+        <h2 class="text-center text-danger">Sign Up</h2>
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control" name="username" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" name="password" required>
+            </div>
+            <button class="btn btn-primary w-100">Sign Up</button>
+        </form>
+        <div class="mt-3 text-center">
+            <a href="{{ url_for('login') }}">Already have an account? Login</a>
+        </div>
     </div>
-    <div style="margin-bottom:10px">
-      <input name="email" type="email" placeholder="Email" required>
-    </div>
-    <div style="margin-bottom:10px">
-      <input name="password" type="password" placeholder="Password" required>
-    </div>
-    <div style="text-align:center">
-      <button class="btn btn-primary" type="submit">Create account</button>
-    </div>
-  </form>
-  <div style="text-align:center;margin-top:12px">
-    <a href="{{ url_for('login') }}">Already have an account? Login</a>
-  </div>
-</div>
-{% endblock %}
+</body>
+</html>
