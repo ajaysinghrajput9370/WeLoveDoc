@@ -1,17 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="card" style="text-align:center">
+<div class="card" style="text-align:center;max-width:500px;margin:auto;">
   <h3 style="margin-top:0">Result</h3>
+  
   {% if out_pdf %}
-    <p>Processed PDF ready:</p>
-    <p><a class="btn btn-primary" href="{{ url_for('download_pdf') }}?file={{ out_pdf }}">Download PDF</a></p>
+    <p style="margin-bottom:8px;">Processed PDF ready:</p>
+    <p><a class="btn btn-primary" href="{{ url_for('download_pdf') }}?file={{ out_pdf }}">⬇ Download PDF</a></p>
   {% else %}
     <p>No output PDF generated.</p>
   {% endif %}
 
   {% if not_found_excel %}
-    <p>Data_Not_Found Excel:</p>
-    <p><a class="btn btn-outline" href="{{ url_for('download_excel') }}?file={{ not_found_excel }}">Download Excel</a></p>
+    <p style="margin-top:20px;">Data_Not_Found Excel:</p>
+    <p><a class="btn btn-outline" href="{{ url_for('download_excel') }}?file={{ not_found_excel }}">⬇ Download Excel</a></p>
   {% endif %}
 </div>
 {% endblock %}
