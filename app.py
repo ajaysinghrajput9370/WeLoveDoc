@@ -10,7 +10,7 @@ from database import get_db_connection, init_db
 import datetime
 
 app = Flask(__name__)
-app.secret_key = "sOUMU"   # सुरक्षा के लिए बदलें
+app.secret_key = "sOUMU"  # सुरक्षा के लिए बदलें
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -19,8 +19,8 @@ os.makedirs("static", exist_ok=True)
 # -------------------------
 # Razorpay Initialization
 # -------------------------
-RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID")
-RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET")
+RAZORPAY_KEY_ID = "rzp_live_4YPuylZ30SovI7"
+RAZORPAY_KEY_SECRET = "fD8evCLKX6Pb5GvCcoF8WBnt"
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 # -------------------------
@@ -105,21 +105,25 @@ def plans():
 
 @app.route("/create_order", methods=["POST"])
 def create_order():
-    amount = int(request.form.get("amount")) * 100  # ₹ → paise
-    currency = "INR"
-    receipt = f"order_rcptid_{int(time.time())}"
-    razorpay_order = razorpay_client.order.create(dict(
-        amount=amount,
-        currency=currency,
-        receipt=receipt,
-        payment_capture='1'
-    ))
-    return render_template("payment.html",
-                           razorpay_order_id=razorpay_order['id'],
-                           razorpay_merchant_key=RAZORPAY_KEY_ID,
-                           amount=amount,
-                           currency=currency,
-                           user_email=session.get("email", ""))
+    try:
+        amount = int(request.form.get("amount")) * 100  # ₹ → paise
+        currency = "INR"
+        receipt = f"order_rcptid_{int(time.time())}"
+        razorpay_order = razorpay_client.order.create(dict(
+            amount=amount,
+            currency=currency,
+            receipt=receipt,
+            payment_capture='1'
+        ))
+        return render_template("payment.html",
+                               razorpay_order_id=razorpay_order['id'],
+                               razorpay_merchant_key=RAZORPAY_KEY_ID,
+                               amount=amount,
+                               currency=currency,
+                               user_email=session.get("email", ""))
+    except razorpay.errors.BadRequestError as e:
+        flash(f"Payment initialization failed: {str(e)}", "danger")
+        return redirect(url_for("plans"))
 
 @app.route("/payment_success", methods=["POST"])
 def payment_success():
