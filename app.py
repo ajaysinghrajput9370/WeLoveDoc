@@ -81,9 +81,14 @@ def init_db():
 # ensure DB exists on import and first request
 init_db()
 
-@app.before_first_request
-def _init_first():
-    init_db()
+_db_inited = False
+
+@app.before_request
+def ensure_db_init():
+    global _db_inited
+    if not _db_inited:
+        init_db()
+        _db_inited = True
 
 # ---------- Utilities ----------
 def clean_old_uploads(folder, max_age_minutes=60):
