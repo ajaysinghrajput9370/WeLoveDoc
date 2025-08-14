@@ -1,40 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
-<style>
-  .result-box {
-    text-align: center;
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    max-width: 600px;
-    margin: auto;
-  }
-  .download-btn {
-    display: inline-block;
-    padding: 12px 20px;
-    margin: 10px;
-    font-size: 16px;
-    text-decoration: none;
-    color: white;
-    border-radius: 6px;
-    font-weight: bold;
-  }
-  .pdf-btn { background-color: #E53935; }
-  .pdf-btn:hover { background-color: #C62828; }
-  .excel-btn { background-color: #1976d2; }
-  .excel-btn:hover { background-color: #0d47a1; }
-</style>
+<div class="card" style="text-align:center">
+  <h3 style="margin-top:0">Result</h3>
+  {% if out_pdf %}
+    <p>Processed PDF ready:</p>
+    <p><a class="btn btn-primary" href="{{ url_for('download_pdf') }}?file={{ out_pdf }}">Download PDF</a></p>
+  {% else %}
+    <p>No output PDF generated.</p>
+  {% endif %}
 
-<div class="result-box">
-  <h3 style="color:#2e7d32;">✅ Highlighting Complete</h3>
-  <a class="download-btn pdf-btn" href="{{ url_for('download_pdf') }}?path={{ out_pdf }}" target="_blank">
-    📄 Download Highlighted PDF
-  </a>
   {% if not_found_excel %}
-    <a class="download-btn excel-btn" href="{{ url_for('download_excel') }}?path={{ not_found_excel }}" target="_blank">
-      📊 Download Data_Not_Found.xlsx
-    </a>
+    <p>Data_Not_Found Excel:</p>
+    <p><a class="btn btn-outline" href="{{ url_for('download_excel') }}?file={{ not_found_excel }}">Download Excel</a></p>
   {% endif %}
 </div>
 {% endblock %}
