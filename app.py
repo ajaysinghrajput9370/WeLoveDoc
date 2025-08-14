@@ -80,7 +80,9 @@ def logout():
     session.pop("username", None)
     flash("Logged out successfully", "info")
     return redirect(url_for("index"))
-
+@app.route("/plans")
+def plans():
+    return render_template("plans.html")
 @app.route("/upload", methods=["POST"])
 def upload():
     if "username" not in session:
