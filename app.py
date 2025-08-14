@@ -1,36 +1,42 @@
 from flask import Flask, render_template, request, send_file, redirect, url_for, session, flash
-import os, time, sqlite3, datetime
+import os
+import time
+import sqlite3
+import razorpay
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from highlight import process_files
 from database import get_db_connection, init_db
-import razorpay
+import datetime
 
-# -------------------------
-# App Setup
-# -------------------------
 app = Flask(__name__)
-app.secret_key = "sOUMU"  # Security key
+app.secret_key = "sOUMU"   # सुरक्षा के लिए बदलें
+
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs("static", exist_ok=True)
 
-# Razorpay client
-razorpay_client = razorpay.Client(
-    auth=(os.environ.get("RAZORPAY_KEY_ID"), os.environ.get("RAZORPAY_KEY_SECRET"))
-)
+# -------------------------
+# Razorpay Initialization
+# -------------------------
+RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET")
+razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
 # -------------------------
-# Helper Functions
+# File helpers
 # -------------------------
 def clean_old_uploads(folder, max_age_minutes=30):
     now = time.time()
     max_age = max_age_minutes * 60
     for filename in os.listdir(folder):
         file_path = os.path.join(folder, filename)
-        if os.path.isfile(file_path) and now - os.path.getmtime(file_path) > max_age:
-            try: os.remove(file_path)
-            except Exception: pass
+        if os.path.isfile(file_path):
+            if now - os.path.getmtime(file_path) > max_age:
+                try:
+                    os.remove(file_path)
+                except Exception:
+                    pass
 
 def save_uploaded_file(file_storage):
     filename = secure_filename(file_storage.filename)
@@ -52,8 +58,10 @@ def signup():
         conn = get_db_connection()
         c = conn.cursor()
         try:
-            c.execute("INSERT INTO users (email, password) VALUES (?, ?)",
-                      (email, generate_password_hash(password)))
+            c.execute(
+                "INSERT INTO users (email, password) VALUES (?, ?)",
+                (email, generate_password_hash(password))
+            )
             conn.commit()
             flash("Signup successful! Please login.", "success")
             return redirect(url_for("login"))
@@ -89,8 +97,12 @@ def logout():
     return redirect(url_for("index"))
 
 # -------------------------
-# Razorpay Routes
+# Plans & Payment
 # -------------------------
+@app.route("/plans")
+def plans():
+    return render_template("plans.html")
+
 @app.route("/create_order", methods=["POST"])
 def create_order():
     amount = int(request.form.get("amount")) * 100  # ₹ → paise
@@ -104,7 +116,7 @@ def create_order():
     ))
     return render_template("payment.html",
                            razorpay_order_id=razorpay_order['id'],
-                           razorpay_merchant_key=os.environ.get("RAZORPAY_KEY_ID"),
+                           razorpay_merchant_key=RAZORPAY_KEY_ID,
                            amount=amount,
                            currency=currency,
                            user_email=session.get("email", ""))
@@ -121,8 +133,9 @@ def payment_success():
             'razorpay_signature': signature
         }
         razorpay_client.utility.verify_payment_signature(params_dict)
+        # Payment successful → subscription update
         now = int(time.time())
-        expiry = now + 30*24*3600  # 30 days subscription
+        expiry = now + 30*24*3600  # 30 days
         conn = get_db_connection()
         c = conn.cursor()
         c.execute("UPDATE users SET subscription_expiry=? WHERE email=?", (expiry, session.get("email")))
@@ -134,25 +147,14 @@ def payment_success():
         flash(f"Payment verification failed: {str(e)}", "danger")
         return redirect(url_for("plans"))
 
-@app.route("/subscribe_dummy")
-def subscribe_dummy():
-    if "user_id" not in session: return redirect(url_for("login"))
-    now = int(time.time())
-    expiry = now + 30*24*3600
-    conn = get_db_connection()
-    c = conn.cursor()
-    c.execute("UPDATE users SET subscription_expiry=?, tasks_done=0 WHERE id=?", (expiry, session["user_id"]))
-    conn.commit()
-    conn.close()
-    flash("Subscription activated for 30 days (demo).", "success")
-    return redirect(url_for("index"))
-
 # -------------------------
-# Main Pages / Highlight
+# Index / Dashboard
 # -------------------------
 @app.route("/")
 def index():
-    user, is_subscribed, tasks_done = None, False, 0
+    user = None
+    is_subscribed = False
+    tasks_done = 0
     if "user_id" in session:
         conn = get_db_connection()
         c = conn.cursor()
@@ -163,17 +165,21 @@ def index():
             user = row[0]
             tasks_done = row[1] or 0
             sub_expiry = row[2]
-            is_subscribed = bool(sub_expiry and sub_expiry > int(time.time()))
+            now = int(time.time())
+            is_subscribed = bool(sub_expiry and sub_expiry > now)
     return render_template("index.html",
                            user=user,
                            is_subscribed=is_subscribed,
                            tasks_done=tasks_done)
 
+# -------------------------
+# Highlight route
+# -------------------------
 @app.route("/highlight", methods=["POST"])
 def highlight_route():
     clean_old_uploads(UPLOAD_FOLDER)
     if "user_id" not in session:
-        return "<h3>Please login</h3><a href='/login'>Login</a>", 403
+        return """<h3>Please login to use this feature.</h3><a href='/login'>Login</a> | <a href='/signup'>Signup</a>""", 403
     conn = get_db_connection()
     c = conn.cursor()
     c.execute("SELECT tasks_done, subscription_expiry FROM users WHERE id=?", (session["user_id"],))
@@ -184,26 +190,30 @@ def highlight_route():
     sub_expiry = row[1] if row else None
     is_subscribed = bool(sub_expiry and sub_expiry > now)
     if not is_subscribed and tasks_done >= 2:
-        return render_template("subscription_limit.html"), 403
-
+        return """
+        <html><body style="font-family:Arial;text-align:center;padding:40px;background:#f9f9f9">
+          <div style="display:inline-block;background:#fff;padding:30px;border-radius:12px;box-shadow:0 0 15px rgba(0,0,0,0.1)">
+            <h3 style="color:#d32f2f">Free task limit reached (2/2)</h3>
+            <p>Please subscribe to continue.</p>
+            <a href="/plans" style="background:#1976d2;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none">View Plans</a>
+          </div>
+        </body></html>
+        """, 403
     pdf_file = request.files.get("pdf_file")
     excel_file = request.files.get("excel_file")
     highlight_type = request.form.get("highlight_type")
     if not pdf_file or not excel_file or highlight_type not in {"uan", "esic"}:
         flash("Please upload both PDF and Excel, and select UAN or ESIC.", "danger")
         return redirect(url_for("index"))
-
     pdf_path = save_uploaded_file(pdf_file)
     excel_path = save_uploaded_file(excel_file)
-
-    out_pdf, not_found_excel = process_files(pdf_path, excel_path, highlight_type, UPLOAD_FOLDER)
-
+    out_pdf, not_found_excel = process_files(pdf_path=pdf_path, excel_path=excel_path,
+                                             mode=highlight_type, output_dir=UPLOAD_FOLDER)
     conn = get_db_connection()
     c = conn.cursor()
     c.execute("UPDATE users SET tasks_done = COALESCE(tasks_done, 0) + 1 WHERE id=?", (session["user_id"],))
     conn.commit()
     conn.close()
-
     return render_template("result.html", out_pdf=out_pdf, not_found_excel=not_found_excel)
 
 # -------------------------
@@ -212,25 +222,61 @@ def highlight_route():
 @app.route("/download_pdf")
 def download_pdf():
     path = request.args.get("path", "")
-    if not os.path.exists(path): return "File not found", 404
+    if not os.path.exists(path):
+        return "File not found", 404
     return send_file(path, as_attachment=True)
 
 @app.route("/download_excel")
 def download_excel():
     path = request.args.get("path", "")
-    if not os.path.exists(path): return "Data_Not_Found.xlsx not available.", 404
+    if not os.path.exists(path):
+        return "Data_Not_Found.xlsx not available.", 404
     return send_file(path, as_attachment=True)
 
 # -------------------------
-# Static Pages
+# Static pages
 # -------------------------
-for page in ["about", "contact", "privacy", "refunds", "shipping", "terms"]:
-    app.add_url_rule(f"/{page}", page, lambda p=page: render_template(f"{p}.html"))
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+@app.route("/contact")
+def contact():
+    return render_template("contact.html")
+
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html")
+
+@app.route("/refunds")
+def refunds():
+    return render_template("refunds.html")
+
+@app.route("/shipping")
+def shipping():
+    return render_template("shipping.html")
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html")
+
+@app.route('/sitemap.xml')
+def sitemap():
+    lastmod = datetime.date.today().isoformat()
+    sitemap_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+      <url>
+        <loc>https://welovedoc.in/</loc>
+        <lastmod>{lastmod}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+      </url>
+    </urlset>"""
+    return sitemap_xml, 200, {'Content-Type': 'application/xml'}
 
 # -------------------------
-# Init DB
+# Run app
 # -------------------------
-with app.app_context(): init_db()
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    init_db()
+    app.run(host="0.0.0.0", port=5000, debug=True)
