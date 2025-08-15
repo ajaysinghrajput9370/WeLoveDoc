@@ -1,10 +1,11 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file, abort
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import razorpay
+from razorpay.errors import BadRequestError, ServerError
 from dotenv import load_dotenv
 import tempfile
 import io
@@ -176,16 +177,18 @@ def payment_success():
     plan_id = request.form.get('plan_id')
     
     try:
-        params_dict = {
+        # Verify payment signature
+        razorpay_client.utility.verify_payment_signature({
             'razorpay_order_id': order_id,
             'razorpay_payment_id': payment_id,
             'razorpay_signature': signature
-        }
-        razorpay_client.utility.verify_payment_signature(params_dict)
+        })
         
+        # Get plan details
         plans = get_subscription_plans()
         plan = plans.get(plan_id)
         
+        # Create subscription record
         start_date = datetime.utcnow()
         end_date = start_date + timedelta(days=plan['duration'])
         
@@ -202,8 +205,11 @@ def payment_success():
         
         flash('Payment successful! Your subscription is now active.', 'success')
         return redirect(url_for('dashboard'))
-    except Exception as e:
+    except (BadRequestError, ServerError) as e:
         flash('Payment verification failed. Please contact support.', 'error')
+        return redirect(url_for('plans'))
+    except Exception as e:
+        flash(f'An error occurred: {str(e)}', 'error')
         return redirect(url_for('plans'))
 
 @app.route('/dashboard')
@@ -224,24 +230,31 @@ def highlight_route():
     reset_monthly_tasks_if_new_month(current_user)
     active_sub = check_user_subscription(current_user)
     
+    # Check task limit for free users
     if not active_sub and current_user.tasks_this_month >= 2:
         flash('Free limit reached (2 tasks/month). Please subscribe for unlimited access.', 'error')
         return redirect(url_for('plans'))
     
+    # Validate file uploads
     if 'pdf_file' not in request.files or 'excel_file' not in request.files:
         flash('Please upload both PDF and Excel files', 'error')
         return redirect(url_for('index'))
     
     try:
+        # Create temp directory
         temp_dir = tempfile.mkdtemp()
+        
+        # Save uploaded files
         pdf_path = os.path.join(temp_dir, 'input.pdf')
         excel_path = os.path.join(temp_dir, 'input.xlsx')
         request.files['pdf_file'].save(pdf_path)
         request.files['excel_file'].save(excel_path)
         
+        # Process files
         mode = request.form['highlight_type']
         output_pdf, not_found_path = process_files(pdf_path, excel_path, mode, temp_dir)
         
+        # Prepare response data
         with open(output_pdf, 'rb') as f:
             pdf_data = base64.b64encode(f.read()).decode('utf-8')
         
@@ -250,6 +263,7 @@ def highlight_route():
             with open(not_found_path, 'rb') as f:
                 missing_data = base64.b64encode(f.read()).decode('utf-8')
         
+        # Update task count
         current_user.tasks_this_month += 1
         current_user.last_task_date = datetime.utcnow()
         db.session.commit()
