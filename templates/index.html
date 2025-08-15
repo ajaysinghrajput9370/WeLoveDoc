@@ -1,85 +1,17 @@
 {% extends "base.html" %}
 {% block content %}
-<style>
-  h2 {
-    text-align: center;
-    margin-top: 0;
-    color: #1565C0;
-    font-weight: bold;
-  }
-  .file-row {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 20px;
-  }
-  /* iLovePDF style upload button */
-  .upload-btn {
-    background: #1565C0;
-    color: white;
-    padding: 25px 82px;
-    border-radius: 12px;
-    font-size: 000*00px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    display: inline-block;
-  }
-  .upload-btn:hover {
-    background: #1E88E5;
-  }
-  /* Hide real input */
-  input[type="file"] {
-    display: none;
-  }
-  .submit-btn {
-    display: inline-block;
-    background: linear-gradient(90deg, #1565C0, #1E88E5);
-    color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: bold;
-    margin-top: 18px;
-    cursor: pointer;
-  }
-  .note-text {
-    text-align: center;
-    color: #777;
-    margin-top: 12px;
-  }
-</style>
-
-<div class="container">
-  <h2>UAN / ESIC Highlighter</h2>
-
- <form action="{{ url_for('highlight_route') }}" method="post" enctype="multipart/form-data">
-    <div class="file-row">
-      <label class="upload-btn">
-        Select PDF
-        <input type="file" name="pdf_file" accept=".pdf" required />
-      </label>
-
-      <label class="upload-btn">
-        Select Excel
-        <input type="file" name="excel_file" accept=".xls,.xlsx" required />
-      </label>
+<div class="card p-4 shadow" style="max-width:500px;margin:auto;">
+  <h3 class="text-center mb-4"><b>We ❤️ Doc</b> – Highlight your life</h3>
+  <form method="POST" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label>Select PDF</label>
+      <input type="file" class="form-control" name="pdf_file" required>
     </div>
-
-    <div style="text-align:center;margin-top:18px;">
-      <label><input type="radio" name="highlight_type" value="uan" checked /> UAN</label>
-      &nbsp;&nbsp;
-      <label><input type="radio" name="highlight_type" value="esic" /> ESIC</label>
+    <div class="mb-3">
+      <label>Select Excel (UAN/ESIC in first column)</label>
+      <input type="file" class="form-control" name="excel_file" required>
     </div>
-
-    <div style="text-align:center;">
-      <button class="submit-btn" type="submit">Highlight Now</button>
-    </div>
-
-    {% if not is_subscribed %}
-      <p class="note-text">Free users: 2 tasks/month. <a href="{{ url_for('plans') }}">See plans</a></p>
-    {% endif %}
+    <button type="submit" class="btn btn-primary w-100">Process & Highlight</button>
   </form>
 </div>
 {% endblock %}
