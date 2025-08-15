@@ -1,196 +1,32 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>{% block title %}WeLoveDoc - Highlight your life{% endblock %}</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WeLoveDoc</title>
   <style>
-    :root {
-      --brand-blue: #1565C0;
-      --brand-lightblue: #1E88E5;
-      --bg-gradient: linear-gradient(135deg, #e3f2fd, #e0f7fa);
-    }
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Arial, sans-serif;
-      background: var(--bg-gradient);
-      padding-top: 110px;
-      padding-bottom: 60px;
-    }
-    .header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      background: var(--brand-blue);
-      color: white;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      z-index: 1000;
-    }
-    .header-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 16px;
-      flex-wrap: wrap;
-    }
-    .brand {
-      font-size: 20px;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .brand .heart {
-      color: white;
-    }
-    .user-info {
-      font-size: 14px;
-      margin-right: 10px;
-    }
-    .header-actions {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-    .header-actions a {
-      text-decoration: none;
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-size: 14px;
-      font-weight: bold;
-      transition: background 0.2s;
-    }
-    .login-btn {
-      background: transparent;
-      border: 1px solid white;
-      color: white;
-    }
-    .login-btn:hover {
-      background: rgba(255,255,255,0.2);
-    }
-    .signup-btn {
-      background: white;
-      color: var(--brand-blue);
-    }
-    .signup-btn:hover {
-      background: #f5f5f5;
-    }
-    .plans-btn {
-      background: linear-gradient(90deg, var(--brand-blue), var(--brand-lightblue));
-      color: white;
-    }
-    .plans-btn:hover {
-      background: linear-gradient(90deg, #0d47a1, #1976d2);
-    }
-    .notice-bar {
-      background: var(--brand-lightblue);
-      overflow: hidden;
-      white-space: nowrap;
-    }
-    .notice-text {
-      display: inline-block;
-      padding-left: 100%;
-      animation: scroll-left 15s linear infinite;
-    }
-    @keyframes scroll-left {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-100%); }
-    }
-    .footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: var(--brand-blue);
-      color: white;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 16px;
-      font-size: 13px;
-      box-shadow: 0 -2px 6px rgba(0,0,0,0.2);
-      flex-wrap: wrap;
-    }
-    .footer a {
-      color: white;
-      text-decoration: none;
-      margin: 0 6px;
-    }
-    .footer a:hover {
-      text-decoration: underline;
-    }
-    .container {
-      max-width: 1000px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
+    header { background: #1565C0; padding: 10px 20px; color: white; display: flex; justify-content: space-between; align-items: center; }
+    nav a { color: white; text-decoration: none; margin-left: 15px; }
+    nav a:hover { text-decoration: underline; }
+    .container { max-width: 800px; margin: 40px auto; background: white; padding: 20px; border-radius: 8px; }
   </style>
 </head>
 <body>
-
-  <!-- Header -->
-  <div class="header">
-    <div class="header-top">
-      <div class="brand">
-        <span class="heart">❤️</span>
-        <span>We <strong>❤️</strong> Doc</span>
-      </div>
-
+  <header>
+    <h1>WeLoveDoc</h1>
+    <nav>
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('plans') }}">Plans</a>
+      <a href="{{ url_for('about') }}">About</a>
       {% if user %}
-        <div class="user-info">
-          Hi, {{ user }} |
-          {% if is_subscribed %}
-            ✅ Subscribed till {{ sub_expiry_date }}
-          {% else %}
-            Free Plan
-          {% endif %}
-        </div>
+        <a href="{{ url_for('logout') }}">Logout</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Login</a>
+        <a href="{{ url_for('signup') }}">Sign Up</a>
       {% endif %}
-
-      <div class="header-actions">
-        <a class="plans-btn" href="{{ url_for('plans') }}">Subscription Plans</a>
-        {% if user %}
-          <a class="login-btn" href="{{ url_for('logout') }}">Logout</a>
-        {% else %}
-          <a class="login-btn" href="{{ url_for('login') }}">Login</a>
-          <a class="signup-btn" href="{{ url_for('signup') }}">Sign up</a>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="notice-bar">
-      <div class="notice-text">
-        More tools coming soon: Unlimited PDF Merge, PDF to Excel, PDF to Word, Employment Card, Form-11, Workmen utilities, etc.
-      </div>
-    </div>
-  </div>
-
-  <!-- Main content -->
-  <div class="container">
-    {% block content %}
-    {% endblock %}
-  </div>
-
-  <!-- Footer -->
-  <div class="footer">
-    <div>
-      <a href="{{ url_for('about') }}">About</a> | 
-      <a href="{{ url_for('refund') }}">Refund</a> | 
-      <a href="{{ url_for('shipping') }}">Shipping</a> | 
-      <a href="{{ url_for('terms') }}">Terms</a> | 
-      <a href="{{ url_for('privacy') }}">Privacy</a> | 
-      <a href="{{ url_for('contact') }}">Contact</a>
-    </div>
-    <div>
-      @We ❤️ Doc — Highlight your life — A&S
-    </div>
-  </div>
-
+    </nav>
+  </header>
+  {% block content %}{% endblock %}
 </body>
 </html>
