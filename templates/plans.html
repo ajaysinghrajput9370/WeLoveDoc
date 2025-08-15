@@ -1,138 +1,147 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
-    .plans-container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-        justify-content: center;
-        margin-top: 30px;
-    }
-    .plan-card {
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        padding: 25px;
-        width: 280px;
-        text-align: center;
-        transition: transform 0.3s;
-    }
-    .plan-card:hover {
-        transform: translateY(-5px);
-    }
-    .plan-name {
-        font-size: 20px;
-        font-weight: bold;
-        color: #1565C0;
-        margin-bottom: 10px;
-    }
-    .plan-price {
-        font-size: 24px;
-        font-weight: bold;
-        margin: 15px 0;
-    }
-    .plan-features {
-        text-align: left;
-        margin: 20px 0;
-    }
-    .plan-features li {
-        margin-bottom: 8px;
-    }
-    .buy-btn {
-        background: linear-gradient(90deg, #1565C0, #1E88E5);
-        color: white;
-        padding: 10px 20px;
-        border-radius: 5px;
-        font-weight: bold;
-        text-decoration: none;
-        display: inline-block;
-        margin-top: 10px;
-    }
+  .plans-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 30px;
+  }
+  .plan-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    padding: 25px;
+    width: 280px;
+    text-align: center;
+    transition: transform 0.3s;
+    border: 1px solid #eee;
+  }
+  .plan-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+  }
+  .plan-name {
+    font-size: 20px;
+    font-weight: bold;
+    color: #1565C0;
+    margin-bottom: 10px;
+  }
+  .plan-price {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 15px 0;
+  }
+  .plan-features {
+    text-align: left;
+    margin: 20px 0;
+    padding-left: 20px;
+  }
+  .plan-features li {
+    margin-bottom: 8px;
+    list-style-type: disc;
+  }
+  .buy-btn {
+    background: linear-gradient(90deg, #1565C0, #1E88E5);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 10px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .buy-btn:hover {
+    transform: translateY(-2px);
+  }
 </style>
 
 <div class="container">
-    <h2>Choose Your Plan</h2>
-    
-    <div class="plans-container">
-        {% for plan_id, plan in plans.items() %}
-        <div class="plan-card">
-            <div class="plan-name">{{ plan.name }}</div>
-            <div class="plan-price">₹{{ plan.price//100 }}</div>
-            <ul class="plan-features">
-                <li>{{ plan.duration }} days access</li>
-                <li>{{ plan.devices }} device{{ 's' if plan.devices > 1 }}</li>
-                <li>Unlimited PDF processing</li>
-                <li>Priority support</li>
-            </ul>
-            <button class="buy-btn" onclick="initiatePayment('{{ plan_id }}')">Buy Now</button>
-        </div>
-        {% endfor %}
+  <h2>Choose Your Plan</h2>
+  
+  <div class="plans-container">
+    {% for plan_id, plan in plans.items() %}
+    <div class="plan-card">
+      <div class="plan-name">{{ plan.name }}</div>
+      <div class="plan-price">₹{{ plan.price//100 }}</div>
+      <ul class="plan-features">
+        <li>{{ plan.duration }} days access</li>
+        <li>{{ plan.devices }} device{{ 's' if plan.devices > 1 }}</li>
+        <li>Unlimited PDF processing</li>
+        <li>Priority support</li>
+      </ul>
+      <button class="buy-btn" onclick="initiatePayment('{{ plan_id }}')">Buy Now</button>
     </div>
+    {% endfor %}
+  </div>
 </div>
 
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
-    function initiatePayment(planId) {
-        fetch('/create_order', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `plan_id=${planId}`
-        })
-        .then(response => response.json())
-        .then(order => {
-            var options = {
-                "key": "{{ razorpay_key_id }}",
-                "amount": order.amount,
-                "currency": order.currency,
-                "name": "We ❤️ Doc",
-                "description": "Subscription Plan",
-                "order_id": order.id,
-                "handler": function(response) {
-                    // Submit form with payment details
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '/payment_success';
-                    
-                    const paymentId = document.createElement('input');
-                    paymentId.type = 'hidden';
-                    paymentId.name = 'razorpay_payment_id';
-                    paymentId.value = response.razorpay_payment_id;
-                    form.appendChild(paymentId);
-                    
-                    const orderId = document.createElement('input');
-                    orderId.type = 'hidden';
-                    orderId.name = 'razorpay_order_id';
-                    orderId.value = response.razorpay_order_id;
-                    form.appendChild(orderId);
-                    
-                    const signature = document.createElement('input');
-                    signature.type = 'hidden';
-                    signature.name = 'razorpay_signature';
-                    signature.value = response.razorpay_signature;
-                    form.appendChild(signature);
-                    
-                    const planIdInput = document.createElement('input');
-                    planIdInput.type = 'hidden';
-                    planIdInput.name = 'plan_id';
-                    planIdInput.value = planId;
-                    form.appendChild(planIdInput);
-                    
-                    document.body.appendChild(form);
-                    form.submit();
-                },
-                "prefill": {
-                    "name": "{{ current_user.username if current_user.is_authenticated else '' }}",
-                    "email": "{{ current_user.email if current_user.is_authenticated else '' }}"
-                },
-                "theme": {
-                    "color": "#1565C0"
-                }
-            };
-            var rzp = new Razorpay(options);
-            rzp.open();
-        });
-    }
+  function initiatePayment(planId) {
+    fetch('/create_order', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `plan_id=${planId}`
+    })
+    .then(response => response.json())
+    .then(order => {
+      var options = {
+        "key": "{{ razorpay_key_id }}",
+        "amount": order.amount,
+        "currency": order.currency,
+        "name": "We ❤️ Doc",
+        "description": "Subscription Plan",
+        "order_id": order.id,
+        "handler": function(response) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = '/payment_success';
+          
+          const paymentId = document.createElement('input');
+          paymentId.type = 'hidden';
+          paymentId.name = 'razorpay_payment_id';
+          paymentId.value = response.razorpay_payment_id;
+          form.appendChild(paymentId);
+          
+          const orderId = document.createElement('input');
+          orderId.type = 'hidden';
+          orderId.name = 'razorpay_order_id';
+          orderId.value = response.razorpay_order_id;
+          form.appendChild(orderId);
+          
+          const signature = document.createElement('input');
+          signature.type = 'hidden';
+          signature.name = 'razorpay_signature';
+          signature.value = response.razorpay_signature;
+          form.appendChild(signature);
+          
+          const planIdInput = document.createElement('input');
+          planIdInput.type = 'hidden';
+          planIdInput.name = 'plan_id';
+          planIdInput.value = planId;
+          form.appendChild(planIdInput);
+          
+          document.body.appendChild(form);
+          form.submit();
+        },
+        "prefill": {
+          "name": "{{ current_user.username if current_user.is_authenticated else '' }}",
+          "email": "{{ current_user.email if current_user.is_authenticated else '' }}"
+        },
+        "theme": {
+          "color": "#1565C0"
+        }
+      };
+      var rzp = new Razorpay(options);
+      rzp.open();
+    });
+  }
 </script>
 {% endblock %}
