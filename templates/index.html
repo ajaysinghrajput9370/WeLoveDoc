@@ -1,34 +1,14 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="text-center py-5">
-  <h1 class="fw-bold mb-3">UAN / ESIC ECR PDF Highlighter</h1>
-  <p class="text-muted mb-4">Excel se match karke <strong>full row highlight</strong>, matched pages save, aur 'Data_Not_Found.xlsx' generate.</p>
-
-  {% if not subscription %}
-    <div class="mb-3">
-      <span class="badge bg-warning text-dark">Free: {{ free_used }}/{{ free_limit }} tasks used</span>
-      <a href="{{ url_for('subscribe') }}" class="btn btn-danger btn-sm ms-2">Subscribe Now</a>
-    </div>
-  {% else %}
-    <div class="mb-3">
-      <span class="badge bg-success">Active Plan: {{ subscription['plan'] }} (till {{ subscription['end_date'] }})</span>
-    </div>
-  {% endif %}
-
-  <div class="card shadow-lg p-4 mx-auto" style="max-width: 800px;">
-    <form action="{{ url_for('process_files') }}" method="POST" enctype="multipart/form-data">
-      <div class="row g-3 align-items-center justify-content-center mb-3">
-        <div class="col-md-5">
-          <label class="form-label fw-bold">Select PDF</label>
-          <input type="file" name="pdf" accept="application/pdf" class="form-control form-control-lg" required>
-        </div>
-        <div class="col-md-5">
-          <label class="form-label fw-bold">Select Excel <small class="text-muted">(UAN/ESIC first column)</small></label>
-          <input type="file" name="excel" accept=".xls,.xlsx" class="form-control form-control-lg" required>
-        </div>
-      </div>
-      <button type="submit" class="btn btn-primary btn-lg px-5">Highlight Now</button>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>We ❤️ Doc</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>We ❤️ Doc</h1>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <button type="submit">Upload</button>
     </form>
-  </div>
-</div>
-{% endblock %}
+</body>
+</html>
