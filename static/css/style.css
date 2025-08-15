@@ -1,13 +1,4 @@
-body { background: #f5f7fa; font-family: Arial, sans-serif; }
-.card { border-radius: 15px; }
-.top-strip {
-    height: 40px;
-    background: linear-gradient(to right, #ff5f6d, #ffc371);
-    color:white; display:flex; align-items:center; padding:0 20px;
-}
-.bottom-strip {
-    height: 30px;
-    background: linear-gradient(to right, #36d1dc, #5b86e5);
-    color:white; display:flex; align-items:center; justify-content:center;
-}
-.navbar-brand { font-weight:bold; }
+.top-strip { background: #d32f2f; color: white; }
+.bottom-strip { background: #d32f2f; color: white; }
+.brand .heart { color: #e53935; }
+.plan-card h5 { margin-bottom: 0.25rem; }
