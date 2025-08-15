@@ -2,7 +2,7 @@ flask==2.3.2
 flask-sqlalchemy==3.0.3
 flask-login==0.6.2
 python-dotenv==1.0.0
-razorpay==2.8.1
+razorpay==1.4.2  # Changed from 2.8.1 to compatible version
 PyPDF2==3.0.1
 openpyxl==3.1.2
 reportlab==4.0.4
