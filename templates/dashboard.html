@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>Welcome, {{ user['name'] }}</h3>
+<p>Email: {{ user['email'] }}</p>
+<p>Subscription: {{ user['subscription'] or 'Free Plan' }}</p>
+<p>Devices allowed: {{ user['devices'] }}</p>
+<p>Tasks done this month: {{ user['tasks_done'] }}</p>
+
+<a href="{{ url_for('plans') }}" class="btn btn-success mt-2">Upgrade / Subscribe</a>
+{% endblock %}
