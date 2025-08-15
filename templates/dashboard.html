@@ -1,65 +1,22 @@
 {% extends "base.html" %}
 {% block content %}
-<style>
-  .dashboard-container {
-    max-width: 800px;
-    margin: 0 auto;
-  }
-  .status-card {
-    background: #f5f5f5;
-    padding: 25px;
-    border-radius: 8px;
-    margin-bottom: 30px;
-  }
-  .status-card h3 {
-    margin-top: 0;
-    color: #1565C0;
-  }
-  .action-btn {
-    display: inline-block;
-    background: linear-gradient(90deg, #1565C0, #1E88E5);
-    color: white;
-    padding: 15px 30px;
-    border-radius: 8px;
-    font-size: 18px;
-    font-weight: bold;
-    text-decoration: none;
-    margin: 10px;
-    transition: transform 0.2s;
-  }
-  .action-btn:hover {
-    transform: translateY(-3px);
-  }
-  .plan-details {
-    margin-top: 20px;
-  }
-  .plan-details p {
-    margin: 8px 0;
-  }
-</style>
-
-<div class="container">
-  <div class="dashboard-container">
-    <h2>Welcome, {{ current_user.username }}!</h2>
-    
-    <div class="status-card">
-      {% if active_sub %}
-        <h3>Subscription Status</h3>
-        <div class="plan-details">
-          <p><strong>Plan:</strong> {{ sub_plan.name }}</p>
-          <p><strong>Devices:</strong> {{ active_sub.devices }}</p>
-          <p><strong>Expires:</strong> {{ active_sub.end_date.strftime('%d %b %Y') }}</p>
-        </div>
+<div class="row">
+  <div class="col-md-8">
+    <div class="card p-4 shadow-sm">
+      <h4>Welcome to your Dashboard</h4>
+      {% if subscription %}
+        <p class="mb-0">Active Plan: <strong>{{ subscription['plan'] }}</strong></p>
+        <p class="text-success">Valid till: {{ subscription['end_date'] }}</p>
       {% else %}
-        <h3>Account Status</h3>
-        <p>You're on the <strong>Free Plan</strong></p>
-        <p>Tasks remaining this month: {{ tasks_remaining }}</p>
-        <a href="{{ url_for('plans') }}" class="action-btn">Upgrade Now</a>
+        <p class="text-danger">No active subscription</p>
+        <a href="{{ url_for('subscribe') }}" class="btn btn-danger btn-sm">Subscribe Now</a>
       {% endif %}
     </div>
-    
-    <div style="text-align: center;">
-      <a href="{{ url_for('index') }}" class="action-btn">Process New Document</a>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-4 shadow-sm">
+      <p class="mb-1">Free usage this month</p>
+      <span class="badge bg-info text-dark fs-6">{{ free_used }}/{{ free_limit }}</span>
     </div>
   </div>
 </div>
