@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card p-4 shadow">
+      <h3 class="mb-3">Subscribe to We ❤️ Doc</h3>
+      <p>First 500 users get discount. Referral rewards apply on all paid users.</p>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="plan-card p-3 border rounded">
+            <h5>Monthly</h5>
+            <p>₹{{ config.PLAN_MONTHLY }}/month</p>
+            <p class="small">1 device</p>
+            <button class="btn btn-primary w-100 pay-btn" data-plan="monthly">Subscribe</button>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="plan-card p-3 border rounded">
+            <h5>6 Months</h5>
+            <p>₹{{ config.PLAN_6MONTH }}</p>
+            <p class="small">1 device</p>
+            <button class="btn btn-primary w-100 pay-btn" data-plan="6month">Subscribe</button>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="plan-card p-3 border rounded">
+            <h5>12 Months</h5>
+            <p>₹{{ config.PLAN_12MONTH }}</p>
+            <p class="small">2 devices</p>
+            <button class="btn btn-primary w-100 pay-btn" data-plan="12month">Subscribe</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.querySelectorAll('.pay-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const plan = btn.dataset.plan;
+    const res = await fetch('{{ url_for("create_order") }}', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({plan})
+    });
+    const order = await res.json();
+
+    const rzp = new Razorpay({
+      key: "{{ config.RAZORPAY_KEY_ID }}",
+      amount: order.amount,
+      currency: order.currency,
+      order_id: order.id,
+      name: "We ❤️ Doc",
+      description: "Subscription " + plan,
+      handler: function (response){
+        fetch('{{ url_for("payment_success") }}', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+          body: new URLSearchParams({plan})
+        }).then(() => window.location = "{{ url_for('dashboard') }}");
+      }
+    });
+    rzp.open();
+  });
+});
+</script>
+{% endblock %}
