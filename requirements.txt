@@ -1,15 +1,6 @@
-Flask
-Werkzeug
-pandas
-openpyxl
-PyMuPDF
-gunicorn
-razorpay
-setuptools
-Flask>=2.0
-werkzeug>=2.0
-pandas
-PyMuPDF
-openpyxl
-# razorpay is optional, include only if you use payments:
-razorpay
+Flask==2.3.5
+PyMuPDF==1.22.5
+pandas==2.1.1
+openpyxl==3.1.3
+Werkzeug==2.3.7
+razorpay==3.4.3
