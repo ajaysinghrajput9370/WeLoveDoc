@@ -1,47 +1,74 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
-    .result-section {
-        margin-bottom: 30px;
-    }
-    .download-btn {
-        background: #1565C0;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 5px;
-        text-decoration: none;
-        display: inline-block;
-        margin-top: 10px;
-    }
+  .result-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .result-section {
+    background: white;
+    padding: 25px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  .download-btn {
+    display: inline-block;
+    background: linear-gradient(90deg, #1565C0, #1E88E5);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: bold;
+    text-decoration: none;
+    margin-top: 15px;
+    transition: transform 0.2s;
+  }
+  .download-btn:hover {
+    transform: translateY(-2px);
+  }
+  .action-btn {
+    display: inline-block;
+    background: #4CAF50;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: bold;
+    text-decoration: none;
+    margin-top: 20px;
+    transition: transform 0.2s;
+  }
+  .action-btn:hover {
+    transform: translateY(-2px);
+  }
 </style>
 
 <div class="container">
+  <div class="result-container">
     <h2>Processing Complete</h2>
     
     <div class="result-section">
-        <h3>Highlighted PDF</h3>
-        <p>Download your PDF with highlighted {{ 'UAN' if highlight_type == 'uan' else 'ESIC' }} numbers:</p>
-        <a href="data:application/pdf;base64,{{ pdf_data | b64encode }}" 
-           download="highlighted.pdf" 
-           class="download-btn">
-            Download PDF
-        </a>
+      <h3>Highlighted PDF</h3>
+      <p>Download your PDF with highlighted {{ 'UAN' if highlight_type == 'uan' else 'ESIC' }} numbers:</p>
+      <a href="{{ url_for('download', file_type='pdf', filename='highlighted.pdf') }}?data={{ pdf_data }}" 
+         class="download-btn">
+        Download PDF
+      </a>
     </div>
     
     {% if missing_data %}
     <div class="result-section">
-        <h3>Missing Data</h3>
-        <p>These {{ 'UAN' if highlight_type == 'uan' else 'ESIC' }} numbers were not found in the PDF:</p>
-        <a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{{ missing_data | b64encode }}" 
-           download="missing_data.xlsx" 
-           class="download-btn">
-            Download Missing Data
-        </a>
+      <h3>Missing Data</h3>
+      <p>These {{ 'UAN' if highlight_type == 'uan' else 'ESIC' }} numbers were not found in the PDF:</p>
+      <a href="{{ url_for('download', file_type='excel', filename='missing_data.xlsx') }}?data={{ missing_data }}" 
+         class="download-btn">
+        Download Missing Data
+      </a>
     </div>
     {% endif %}
     
-    <div style="margin-top:30px;">
-        <a href="{{ url_for('index') }}" class="submit-btn">Process Another Document</a>
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="{{ url_for('index') }}" class="action-btn">Process Another Document</a>
     </div>
+  </div>
 </div>
 {% endblock %}
