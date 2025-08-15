@@ -1,13 +1,3 @@
-flask
-flask-sqlalchemy
-flask-login
-python-dotenv
-razorpay
-PyPDF2
-openpyxl
-reportlab
-gunicorn
-setuptools
 flask==2.3.2
 flask-sqlalchemy==3.0.3
 flask-login==0.6.2
