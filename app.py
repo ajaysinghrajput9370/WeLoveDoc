@@ -98,16 +98,20 @@ def logout():
 
 # ------------------ Static Info Pages ------------------
 @app.route("/about")
-def about(): return render_template("about.html")
+def about():
+    return render_template("about.html")
 
 @app.route("/privacy")
-def privacy(): return render_template("privacy.html")
+def privacy():
+    return render_template("privacy.html")
 
 @app.route("/terms")
-def terms(): return render_template("terms.html")
+def terms():
+    return render_template("terms.html")
 
 @app.route("/plans")
-def plans(): return render_template("plans.html")
+def plans():
+    return render_template("plans.html")
 
 # Dummy pages for footer links
 @app.route("/refund")
@@ -138,16 +142,29 @@ def highlight_route():
     pdf_file.save(pdf_path)
     excel_file.save(excel_path)
 
+    flash("Files uploaded successfully!", "info")
+
     try:
-        # Call process_files from highlight.py
+        # Process files with highlight logic
         result_pdf, result_excel = process_files(pdf_path, excel_path, highlight_type, RESULT_FOLDER)
     except Exception as e:
         flash(f"Error processing files: {e}", "danger")
         return redirect(url_for("index"))
 
-    # Success message
-    flash("Files processed successfully! Your highlighted PDF will download now.", "success")
-    return send_file(result_pdf, as_attachment=True)
+    flash("PDF highlighting complete! Download below.", "success")
+
+    # Render a page showing download links
+    return render_template("download.html", pdf_file=os.path.basename(result_pdf),
+                           excel_file=os.path.basename(result_excel) if result_excel else None)
+
+@app.route("/download/<filename>")
+def download_file(filename):
+    path = os.path.join(RESULT_FOLDER, filename)
+    if os.path.exists(path):
+        return send_file(path, as_attachment=True)
+    else:
+        flash("File not found", "danger")
+        return redirect(url_for("index"))
 
 # ------------------ Run App ------------------
 if __name__ == "__main__":
