@@ -1,13 +1,47 @@
 {% extends "base.html" %}
 {% block content %}
-<h3>Results</h3>
-<div class="mb-3">
-  <a href="{{ url_for('download_file', filename=pdf_file) }}" class="btn btn-success">Download Highlighted PDF</a>
+<style>
+    .result-section {
+        margin-bottom: 30px;
+    }
+    .download-btn {
+        background: #1565C0;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 10px;
+    }
+</style>
+
+<div class="container">
+    <h2>Processing Complete</h2>
+    
+    <div class="result-section">
+        <h3>Highlighted PDF</h3>
+        <p>Download your PDF with highlighted {{ 'UAN' if highlight_type == 'uan' else 'ESIC' }} numbers:</p>
+        <a href="data:application/pdf;base64,{{ pdf_data | b64encode }}" 
+           download="highlighted.pdf" 
+           class="download-btn">
+            Download PDF
+        </a>
+    </div>
+    
+    {% if missing_data %}
+    <div class="result-section">
+        <h3>Missing Data</h3>
+        <p>These {{ 'UAN' if highlight_type == 'uan' else 'ESIC' }} numbers were not found in the PDF:</p>
+        <a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{{ missing_data | b64encode }}" 
+           download="missing_data.xlsx" 
+           class="download-btn">
+            Download Missing Data
+        </a>
+    </div>
+    {% endif %}
+    
+    <div style="margin-top:30px;">
+        <a href="{{ url_for('index') }}" class="submit-btn">Process Another Document</a>
+    </div>
 </div>
-{% if excel_file %}
-<div class="mb-3">
-  <a href="{{ url_for('download_file', filename=excel_file) }}" class="btn btn-warning">Download Not Found Excel</a>
-</div>
-{% endif %}
-<a href="{{ url_for('index') }}" class="btn btn-secondary">Back</a>
 {% endblock %}
