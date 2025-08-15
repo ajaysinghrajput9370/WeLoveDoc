@@ -1,10 +1,23 @@
 {% extends "base.html" %}
 {% block content %}
-<h3>Welcome, {{ user['name'] }}</h3>
-<p>Email: {{ user['email'] }}</p>
-<p>Subscription: {{ user['subscription'] or 'Free Plan' }}</p>
-<p>Devices allowed: {{ user['devices'] }}</p>
-<p>Tasks done this month: {{ user['tasks_done'] }}</p>
-
-<a href="{{ url_for('plans') }}" class="btn btn-success mt-2">Upgrade / Subscribe</a>
+<div class="container">
+    <h2>Your Account</h2>
+    
+    <div style="background:#f5f5f5;padding:20px;border-radius:8px;margin-bottom:20px;">
+        <h3 style="margin-top:0;">Subscription Status</h3>
+        {% if active_sub %}
+            <p><strong>Plan:</strong> {{ sub_plan.name }}</p>
+            <p><strong>Devices:</strong> {{ active_sub.devices }}</p>
+            <p><strong>Expires:</strong> {{ active_sub.end_date.strftime('%d %b %Y') }}</p>
+        {% else %}
+            <p>You are on the <strong>Free Plan</strong></p>
+            <p>Tasks remaining this month: {{ tasks_remaining }}</p>
+            <a href="{{ url_for('plans') }}" class="submit-btn">Upgrade Now</a>
+        {% endif %}
+    </div>
+    
+    <div style="margin-top:30px;">
+        <a href="{{ url_for('index') }}" class="submit-btn">Process New Document</a>
+    </div>
+</div>
 {% endblock %}
