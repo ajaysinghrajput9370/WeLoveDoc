@@ -1,126 +1,34 @@
 {% extends "base.html" %}
 {% block content %}
-<style>
-  h2 {
-    text-align: center;
-    margin-top: 0;
-    color: #1565C0;
-    font-weight: bold;
-  }
-  .file-row {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin: 30px 0;
-  }
-  .upload-btn {
-    background: #1565C0;
-    color: white;
-    padding: 25px 82px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.2s ease;
-    display: inline-block;
-    text-align: center;
-  }
-  .upload-btn:hover {
-    background: #1E88E5;
-  }
-  input[type="file"] {
-    display: none;
-  }
-  .radio-group {
-    margin: 20px 0;
-    text-align: center;
-  }
-  .radio-group label {
-    margin: 0 15px;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  .submit-btn {
-    background: linear-gradient(90deg, #1565C0, #1E88E5);
-    color: white;
-    padding: 12px 24px;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    border: none;
-    transition: transform 0.2s;
-  }
-  .submit-btn:hover {
-    transform: translateY(-2px);
-  }
-  .note-text {
-    text-align: center;
-    color: #777;
-    margin-top: 12px;
-  }
-  .file-name {
-    margin-top: 8px;
-    font-size: 14px;
-    color: #555;
-  }
-</style>
+<div class="text-center py-5">
+  <h1 class="fw-bold mb-3">UAN / ESIC ECR PDF Highlighter</h1>
+  <p class="text-muted mb-4">Excel se match karke <strong>full row highlight</strong>, matched pages save, aur 'Data_Not_Found.xlsx' generate.</p>
 
-<div class="container">
-  <h2>UAN / ESIC Highlighter</h2>
-
-  <form action="{{ url_for('highlight_route') }}" method="post" enctype="multipart/form-data" onsubmit="return validateFiles()">
-    <div class="file-row">
-      <label class="upload-btn">
-        Select PDF
-        <input type="file" name="pdf_file" accept=".pdf" required id="pdfInput" />
-        <div class="file-name" id="pdfFileName">No file selected</div>
-      </label>
-
-      <label class="upload-btn">
-        Select Excel
-        <input type="file" name="excel_file" accept=".xls,.xlsx" required id="excelInput" />
-        <div class="file-name" id="excelFileName">No file selected</div>
-      </label>
+  {% if not subscription %}
+    <div class="mb-3">
+      <span class="badge bg-warning text-dark">Free: {{ free_used }}/{{ free_limit }} tasks used</span>
+      <a href="{{ url_for('subscribe') }}" class="btn btn-danger btn-sm ms-2">Subscribe Now</a>
     </div>
-
-    <div class="radio-group">
-      <label><input type="radio" name="highlight_type" value="uan" checked /> UAN</label>
-      <label><input type="radio" name="highlight_type" value="esic" /> ESIC</label>
+  {% else %}
+    <div class="mb-3">
+      <span class="badge bg-success">Active Plan: {{ subscription['plan'] }} (till {{ subscription['end_date'] }})</span>
     </div>
+  {% endif %}
 
-    <div style="text-align:center;margin-top:20px;">
-      <button class="submit-btn" type="submit">Highlight Now</button>
-    </div>
-
-    {% if not is_subscribed %}
-      <p class="note-text">Free users: 2 tasks/month. <a href="{{ url_for('plans') }}">See plans</a></p>
-    {% endif %}
-  </form>
+  <div class="card shadow-lg p-4 mx-auto" style="max-width: 800px;">
+    <form action="{{ url_for('process_files') }}" method="POST" enctype="multipart/form-data">
+      <div class="row g-3 align-items-center justify-content-center mb-3">
+        <div class="col-md-5">
+          <label class="form-label fw-bold">Select PDF</label>
+          <input type="file" name="pdf" accept="application/pdf" class="form-control form-control-lg" required>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label fw-bold">Select Excel <small class="text-muted">(UAN/ESIC first column)</small></label>
+          <input type="file" name="excel" accept=".xls,.xlsx" class="form-control form-control-lg" required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg px-5">Highlight Now</button>
+    </form>
+  </div>
 </div>
-
-<script>
-  document.getElementById('pdfInput').addEventListener('change', function(e) {
-    const fileName = e.target.files[0] ? e.target.files[0].name : 'No file selected';
-    document.getElementById('pdfFileName').textContent = fileName;
-  });
-
-  document.getElementById('excelInput').addEventListener('change', function(e) {
-    const fileName = e.target.files[0] ? e.target.files[0].name : 'No file selected';
-    document.getElementById('excelFileName').textContent = fileName;
-  });
-
-  function validateFiles() {
-    const pdfFile = document.getElementById('pdfInput').files[0];
-    const excelFile = document.getElementById('excelInput').files[0];
-    
-    if (!pdfFile || !excelFile) {
-      alert('Please select both PDF and Excel files');
-      return false;
-    }
-    
-    return true;
-  }
-</script>
 {% endblock %}
