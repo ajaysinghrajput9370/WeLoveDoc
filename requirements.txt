@@ -6,3 +6,4 @@ razorpay
 PyPDF2
 openpyxl
 reportlab
+gunicorn
