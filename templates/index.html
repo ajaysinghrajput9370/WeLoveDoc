@@ -7,10 +7,11 @@
     background: #1565C0; color: white; padding: 25px 82px;
     border-radius: 12px; font-size: 16px; font-weight: bold;
     cursor: pointer; transition: background 0.2s ease;
-    display: inline-block;
+    display: inline-block; text-align: center;
   }
   .upload-btn:hover { background: #1E88E5; }
   input[type="file"] { display: none; }
+  .file-name { margin-top: 6px; font-size: 14px; color: #333; text-align: center; }
   .submit-btn {
     background: linear-gradient(90deg, #1565C0, #1E88E5);
     color: white; padding: 12px 24px; border-radius: 8px;
@@ -25,14 +26,21 @@
 
   <form action="{{ url_for('highlight_route') }}" method="post" enctype="multipart/form-data">
     <div class="file-row">
-      <label class="upload-btn">
-        Select PDF
-        <input type="file" name="pdf_file" accept=".pdf" required />
-      </label>
-      <label class="upload-btn">
-        Select Excel
-        <input type="file" name="excel_file" accept=".xls,.xlsx" required />
-      </label>
+      <div>
+        <label class="upload-btn">
+          Select PDF
+          <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" required />
+        </label>
+        <div id="pdf-name" class="file-name"></div>
+      </div>
+
+      <div>
+        <label class="upload-btn">
+          Select Excel
+          <input type="file" id="excel_file" name="excel_file" accept=".xls,.xlsx" required />
+        </label>
+        <div id="excel-name" class="file-name"></div>
+      </div>
     </div>
 
     <div style="text-align:center;margin-top:18px;">
@@ -53,4 +61,16 @@
     {% endif %}
   </form>
 </div>
+
+<script>
+  document.getElementById("pdf_file").addEventListener("change", function() {
+    let fileName = this.files[0]?.name || "";
+    document.getElementById("pdf-name").textContent = fileName ? "📄 " + fileName : "";
+  });
+
+  document.getElementById("excel_file").addEventListener("change", function() {
+    let fileName = this.files[0]?.name || "";
+    document.getElementById("excel-name").textContent = fileName ? "📊 " + fileName : "";
+  });
+</script>
 {% endblock %}
