@@ -1,5 +1,6 @@
-Flask>=2.3.3,<3.0
+Flask<3.0,>=2.3.3
 PyPDF2==3.0.1
+PyMuPDF==1.23.6
 pandas>=2.1.1
 openpyxl>=3.1.2
 gunicorn>=21.2.0
