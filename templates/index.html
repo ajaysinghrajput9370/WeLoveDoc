@@ -1,24 +1,59 @@
 {% extends "base.html" %}
 {% block content %}
 <style>
-  h2 { text-align: center; margin-top: 0; color: #1565C0; font-weight: bold; }
-  .file-row { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
-  .upload-btn {
-    background: #1565C0; color: white; padding: 25px 82px;
-    border-radius: 12px; font-size: 16px; font-weight: bold;
-    cursor: pointer; transition: background 0.2s ease;
-    display: inline-block; text-align: center;
+  h2 {
+    text-align: center;
+    margin-top: 0;
+    color: #1565C0;
+    font-weight: bold;
   }
-  .upload-btn:hover { background: #1E88E5; }
-  input[type="file"] { display: none; }
-  .file-name { margin-top: 6px; font-size: 14px; color: #333; text-align: center; }
+  .file-row {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 20px;
+  }
+  .upload-btn {
+    background: #1565C0;
+    color: white;
+    padding: 25px 82px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: inline-block;
+    text-align: center;
+  }
+  .upload-btn:hover {
+    background: #1E88E5;
+  }
+  input[type="file"] {
+    display: none;
+  }
+  .file-name {
+    margin-top: 6px;
+    font-size: 14px;
+    color: #333;
+    text-align: center;
+  }
   .submit-btn {
     background: linear-gradient(90deg, #1565C0, #1E88E5);
-    color: white; padding: 12px 24px; border-radius: 8px;
-    font-size: 16px; font-weight: bold; margin-top: 18px;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 18px;
     cursor: pointer;
+    border: none;
   }
-  .note-text { text-align: center; color: #777; margin-top: 12px; }
+  .note-text {
+    text-align: center;
+    color: #777;
+    margin-top: 12px;
+  }
 </style>
 
 <div class="container">
@@ -26,6 +61,7 @@
 
   <form action="{{ url_for('highlight_route') }}" method="post" enctype="multipart/form-data">
     <div class="file-row">
+      <!-- PDF Upload -->
       <div>
         <label class="upload-btn">
           Select PDF
@@ -34,6 +70,7 @@
         <div id="pdf-name" class="file-name"></div>
       </div>
 
+      <!-- Excel Upload -->
       <div>
         <label class="upload-btn">
           Select Excel
@@ -43,16 +80,19 @@
       </div>
     </div>
 
-    <div style="text-align:center;margin-top:18px;">
+    <!-- Highlight type -->
+    <div style="text-align:center; margin-top:18px;">
       <label><input type="radio" name="highlight_type" value="uan" checked /> UAN</label>
       &nbsp;&nbsp;
       <label><input type="radio" name="highlight_type" value="esic" /> ESIC</label>
     </div>
 
+    <!-- Submit -->
     <div style="text-align:center;">
       <button class="submit-btn" type="submit">Highlight Now</button>
     </div>
 
+    <!-- Free user note -->
     {% if not is_subscribed %}
       <p class="note-text">
         Free users: 2 tasks/month.
