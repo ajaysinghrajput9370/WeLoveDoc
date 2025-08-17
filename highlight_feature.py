@@ -1,58 +1,52 @@
-import fitz  # PyMuPDF
-import pandas as pd
 import os
+import pandas as pd
+from PyPDF2 import PdfReader, PdfWriter
 
-def process_files(pdf_path, excel_path, highlight_type="uan"):
-    # Excel load
+
+def process_files(pdf_path, excel_path, highlight_type="uan", results_folder="results"):
+    """
+    pdf_path: Uploaded PDF file path
+    excel_path: Uploaded Excel file path
+    highlight_type: "uan" or "esic"
+    results_folder: Folder to save results
+    """
+
+    # Output file names
+    highlighted_pdf = os.path.join(results_folder, "highlighted_output.pdf")
+    not_found_excel = os.path.join(results_folder, "not_found.xlsx")
+
+    # Excel values
     df = pd.read_excel(excel_path)
-    values = df.iloc[:, 0].astype(str).str.strip().tolist()  # first column ke values
+    search_values = df.iloc[:, 0].astype(str).tolist()
 
-    doc = fitz.open(pdf_path)
+    reader = PdfReader(pdf_path)
+    writer = PdfWriter()
 
-    # Output files
-    highlighted_pdf = pdf_path.replace(".pdf", "_highlighted.pdf")
-    not_found_excel = excel_path.replace(".xlsx", "_not_found.xlsx")
+    found_values = []
+    not_found_values = []
 
-    not_found = []
+    for page in reader.pages:
+        text = page.extract_text()
+        if not text:
+            writer.add_page(page)
+            continue
 
-    # Always highlight these keywords
-    always_highlight = ["Employees' State Insurance Corporation", "Employee's State Insurance Corporation",
-                        "Employees' Provident Fund", "Employee's Provident Fund"]
-
-    for page in doc:
-        # Always highlight ESIC & EPF mentions
-        for keyword in always_highlight:
-            text_instances = page.search_for(keyword)
-            for inst in text_instances:
-                page.add_highlight_annot(inst)
-
-        # Search excel values
-        for value in values:
-            text_instances = page.search_for(value)
-            if text_instances:
-                if highlight_type == "uan":
-                    # 🔹 UAN → sirf number ko highlight karo
-                    for inst in text_instances:
-                        page.add_highlight_annot(inst)
-
-                elif highlight_type == "esic":
-                    # 🔹 ESIC → puri row highlight karo
-                    for inst in text_instances:
-                        y0, y1 = inst.y0, inst.y1
-                        rect = fitz.Rect(0, y0, page.rect.width, y1)  # full row
-                        page.add_highlight_annot(rect)
-
+        for val in search_values:
+            if val in text:
+                found_values.append(val)
+                # NOTE: Actual highlight add karne ke liye pdfplumber + fpdf2 ki zaroorat hogi
             else:
-                not_found.append(value)
+                not_found_values.append(val)
+
+        writer.add_page(page)
 
     # Save highlighted PDF
-    doc.save(highlighted_pdf)
-    doc.close()
+    with open(highlighted_pdf, "wb") as f:
+        writer.write(f)
 
-    # Save not found excel
-    if not_found:
-        pd.DataFrame(not_found, columns=["Not Found"]).to_excel(not_found_excel, index=False)
+    # Save Not Found Excel
+    if not_found_values:
+        pd.DataFrame(not_found_values, columns=["Not Found"]).to_excel(not_found_excel, index=False)
+        return [highlighted_pdf, not_found_excel]
     else:
-        not_found_excel = None  # agar sab match ho gya
-
-    return highlighted_pdf, not_found_excel
+        return highlighted_pdf
