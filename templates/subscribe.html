@@ -1,69 +1,92 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-8">
-    <div class="card p-4 shadow">
-      <h3 class="mb-3">Subscribe to We ❤️ Doc</h3>
-      <p>First 500 users get discount. Referral rewards apply on all paid users.</p>
-      <div class="row g-3">
-        <div class="col-md-4">
-          <div class="plan-card p-3 border rounded">
-            <h5>Monthly</h5>
-            <p>₹{{ config.PLAN_MONTHLY }}/month</p>
-            <p class="small">1 device</p>
-            <button class="btn btn-primary w-100 pay-btn" data-plan="monthly">Subscribe</button>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="plan-card p-3 border rounded">
-            <h5>6 Months</h5>
-            <p>₹{{ config.PLAN_6MONTH }}</p>
-            <p class="small">1 device</p>
-            <button class="btn btn-primary w-100 pay-btn" data-plan="6month">Subscribe</button>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="plan-card p-3 border rounded">
-            <h5>12 Months</h5>
-            <p>₹{{ config.PLAN_12MONTH }}</p>
-            <p class="small">2 devices</p>
-            <button class="btn btn-primary w-100 pay-btn" data-plan="12month">Subscribe</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Subscribe - We ❤️ Doc</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>
+body { 
+    background: linear-gradient(135deg, #4e9af1, #1c64f2); 
+    height: 100vh; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    margin: 0; 
+    font-family: Arial, sans-serif;
+}
+.container {
+    background-color: white; 
+    padding: 40px 30px; 
+    border-radius: 15px; 
+    text-align: center; 
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+h3 {
+    margin-bottom: 30px; 
+    font-size: 26px; 
+    font-weight: bold; 
+    color: #333;
+}
+.btn-pay {
+    background: linear-gradient(90deg, #f2994a, #f2c94c);
+    border: none;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 15px 30px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+    width: 100%;
+}
+.btn-pay:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h3>Subscribe for ₹49 / Month</h3>
+    <p>Activate subscription to use the Highlight feature</p>
+    <button class="btn-pay" id="rzp-button">Pay & Activate</button>
 </div>
 
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
-document.querySelectorAll('.pay-btn').forEach(btn => {
-  btn.addEventListener('click', async () => {
-    const plan = btn.dataset.plan;
-    const res = await fetch('{{ url_for("create_order") }}', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({plan})
+document.getElementById('rzp-button').onclick = function(e){
+    fetch("/create_order", {method: "POST"})
+    .then(res => res.json())
+    .then(data => {
+        var options = {
+            "key": "{{ razorpay_key_id }}",
+            "amount": data.amount, // in paise
+            "currency": "INR",
+            "name": "We ❤️ Doc",
+            "description": "Monthly Subscription",
+            "order_id": data.id,
+            "handler": function (response){
+                // Payment successful, send to server for verification
+                fetch("/subscribe", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(response)
+                })
+                .then(res => res.json())
+                .then(resp => {
+                    alert(resp.message);
+                    if(resp.success){ window.location.href = "/"; }
+                });
+            },
+            "theme": { "color": "#4e9af1" }
+        };
+        var rzp1 = new Razorpay(options);
+        rzp1.open();
+        e.preventDefault();
     });
-    const order = await res.json();
-
-    const rzp = new Razorpay({
-      key: "{{ config.RAZORPAY_KEY_ID }}",
-      amount: order.amount,
-      currency: order.currency,
-      order_id: order.id,
-      name: "We ❤️ Doc",
-      description: "Subscription " + plan,
-      handler: function (response){
-        fetch('{{ url_for("payment_success") }}', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-          body: new URLSearchParams({plan})
-        }).then(() => window.location = "{{ url_for('dashboard') }}");
-      }
-    });
-    rzp.open();
-  });
-});
+}
 </script>
-{% endblock %}
+
+</body>
+</html>
