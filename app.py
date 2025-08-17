@@ -65,7 +65,7 @@ def login():
         password = request.form.get("password")
         # Dummy check (replace with real DB check later)
         if username and password:
-            session["user"] = {"name": username}  # ✅ dict ke andar name save karenge
+            session["user"] = username  # ✅ string save
             return redirect(url_for("index"))
         return "Invalid credentials", 401
     return render_template("login.html")
@@ -77,7 +77,7 @@ def signup():
         username = request.form.get("username")
         password = request.form.get("password")
         # Dummy save (later integrate DB)
-        session["user"] = {"name": username}  # ✅ dict ke andar name save karenge
+        session["user"] = username  # ✅ string save
         return redirect(url_for("index"))
     return render_template("signup.html")
 
