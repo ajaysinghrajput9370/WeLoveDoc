@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from PyPDF2 import PdfReader, PdfWriter
+import fitz  # PyMuPDF
 
 
 def process_files(pdf_path, excel_path, highlight_type="uan", results_folder="results"):
@@ -26,29 +26,29 @@ def process_files(pdf_path, excel_path, highlight_type="uan", results_folder="re
     df = pd.read_excel(excel_path)
     search_values = df.iloc[:, 0].astype(str).tolist()
 
-    reader = PdfReader(pdf_path)
-    writer = PdfWriter()
+    # Open PDF with PyMuPDF
+    doc = fitz.open(pdf_path)
 
     found_values = set()
     not_found_values = set(search_values)  # Start with all as not found
 
-    for page in reader.pages:
-        text = page.extract_text()
-        if not text:
-            writer.add_page(page)
-            continue
-
+    for page in doc:
+        text = page.get_text("text")
         for val in search_values:
             if val in text:
                 found_values.add(val)
                 if val in not_found_values:
                     not_found_values.remove(val)
 
-        writer.add_page(page)
+                # Highlight occurrences
+                areas = page.search_for(val)
+                for area in areas:
+                    highlight = page.add_highlight_annot(area)
+                    highlight.update()
 
-    # Save highlighted PDF (actually just a copy, no highlights yet)
-    with open(highlighted_pdf, "wb") as f:
-        writer.write(f)
+    # Save highlighted PDF
+    doc.save(highlighted_pdf, garbage=4, deflate=True)
+    doc.close()
 
     # Save Not Found Excel if needed
     if not_found_values:
