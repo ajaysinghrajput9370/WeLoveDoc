@@ -1,60 +1,87 @@
-import os
-import pandas as pd
 import fitz  # PyMuPDF
-import time
+import pandas as pd
+import os
 
-def process_files(pdf_path, excel_path, highlight_type="uan", results_folder="results"):
+def highlight_pdf(pdf_path, excel_path, highlight_type="pf", output_folder="results"):
     """
-    pdf_path: Uploaded PDF file path
-    excel_path: Uploaded Excel file path
-    highlight_type: "uan" or "esic"
-    results_folder: Folder to save results
-
-    Returns:
-        list -> [highlighted_pdf, not_found_excel] if some values are missing
-        list -> [highlighted_pdf] if all values are found
+    PDF highlighter with Excel + fixed keywords.
     """
+    # Fixed phrases to always highlight
+    FIXED_PHRASES = [
+        "Employees' State Insurance Corporation",
+        "EMPLOYEE'S PROVIDENT FUND ORGANISATION"
+    ]
 
-    # Ensure results folder exists
-    os.makedirs(results_folder, exist_ok=True)
+    # Load Excel
+    df = pd.read_excel(excel_path, header=None)
+    excel_values = df[0].astype(str).tolist()
 
-    # Timestamp to avoid overwriting files
-    ts = int(time.time())
-    highlighted_pdf = os.path.join(results_folder, f"highlighted_{ts}.pdf")
-    not_found_excel = os.path.join(results_folder, f"not_found_{ts}.xlsx")
-
-    # Read Excel values (first column)
-    df = pd.read_excel(excel_path)
-    search_values = df.iloc[:, 0].astype(str).tolist()
-
-    # Open PDF
-    doc = fitz.open(pdf_path)
-
-    found_values = set()
-    not_found_values = set(search_values)
-
-    for page in doc:
-        text = page.get_text("text")
-        for val in search_values:
-            val = str(val)
-            if val in text:
-                found_values.add(val)
-                if val in not_found_values:
-                    not_found_values.remove(val)
-
-                # Highlight occurrences
-                areas = page.search_for(val)
-                for area in areas:
-                    highlight = page.add_highlight_annot(area)
-                    highlight.update()
-
-    # Save highlighted PDF
-    doc.save(highlighted_pdf, garbage=4, deflate=True)
-    doc.close()
-
-    # Save Not Found Excel if any
-    if not_found_values:
-        pd.DataFrame(list(not_found_values), columns=["Not Found"]).to_excel(not_found_excel, index=False)
-        return [highlighted_pdf, not_found_excel]
+    # Clear old outputs
+    if os.path.exists(output_folder):
+        for f in os.listdir(output_folder):
+            os.remove(os.path.join(output_folder, f))
     else:
-        return [highlighted_pdf]
+        os.makedirs(output_folder)
+
+    pdf_doc = fitz.open(pdf_path)
+    matched_pages = []
+    not_found = []
+
+    for page_num in range(len(pdf_doc)):
+        page = pdf_doc[page_num]
+        page_matched = False
+
+        # Get words
+        words = page.get_text("words")  # x0,y0,x1,y1,text,block,line,word
+
+        # --- Excel values highlight ---
+        for val in excel_values:
+            matched_words = [w for w in words if val.lower() in w[4].lower()]
+            if matched_words:
+                page_matched = True
+                for w in matched_words:
+                    x0, y0, x1, y1, text, _, _, _ = w
+                    if highlight_type.lower() == "pf":
+                        rect = fitz.Rect(x0, y0, x1, y1)
+                        page.add_highlight_annot(rect)
+                    elif highlight_type.lower() == "esic":
+                        row_words = [rw for rw in words if rw[1] >= y0-1 and rw[3] <= y1+1]
+                        rect = fitz.Rect(min(rw[0] for rw in row_words),
+                                         y0,
+                                         max(rw[2] for rw in row_words),
+                                         y1)
+                        page.add_highlight_annot(rect)
+            else:
+                if val not in not_found:
+                    not_found.append(val)
+
+        # --- Fixed phrases highlight (line-level search) ---
+        for phrase in FIXED_PHRASES:
+            # Search page text for phrase positions
+            text_instances = page.search_for(phrase)
+            for rect in text_instances:
+                page.add_highlight_annot(rect)
+                page_matched = True
+
+        if page_matched:
+            matched_pages.append(page_num)
+
+    # Save only matched pages
+    if matched_pages:
+        new_pdf = fitz.open()
+        for num in matched_pages:
+            new_pdf.insert_pdf(pdf_doc, from_page=num, to_page=num)
+        output_pdf_path = os.path.join(output_folder, "highlighted_output.pdf")
+        new_pdf.save(output_pdf_path)
+    else:
+        output_pdf_path = None
+
+    # Save Not Found Excel
+    if not_found:
+        not_found_df = pd.DataFrame(not_found)
+        not_found_path = os.path.join(output_folder, "Data_Not_Found.xlsx")
+        not_found_df.to_excel(not_found_path, index=False, header=False)
+    else:
+        not_found_path = None
+
+    return output_pdf_path, not_found_path
