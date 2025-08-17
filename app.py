@@ -10,13 +10,13 @@ UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Home page
+# 🏠 Home page
 @app.route("/")
 def index():
-    user = session.get("user")
+    user = session.get("user")  # session me user ka naam
     return render_template("index.html", is_subscribed=False, user=user)
 
-# Highlight route
+# ✍ Highlight route
 @app.route("/highlight", methods=["POST"])
 def highlight_route():
     if 'pdf_file' not in request.files or 'excel_file' not in request.files:
@@ -47,12 +47,12 @@ def highlight_route():
         if os.path.exists(excel_path):
             os.remove(excel_path)
 
-# Plans route
+# 💳 Plans route
 @app.route("/plans")
 def plans():
     return "<h2>Subscription plans (placeholder)</h2>"
 
-# About route
+# ℹ About route
 @app.route("/about")
 def about():
     return render_template("about.html")
@@ -65,7 +65,7 @@ def login():
         password = request.form.get("password")
         # Dummy check (replace with real DB check later)
         if username and password:
-            session["user"] = username
+            session["user"] = {"name": username}  # ✅ dict ke andar name save karenge
             return redirect(url_for("index"))
         return "Invalid credentials", 401
     return render_template("login.html")
@@ -77,7 +77,7 @@ def signup():
         username = request.form.get("username")
         password = request.form.get("password")
         # Dummy save (later integrate DB)
-        session["user"] = username
+        session["user"] = {"name": username}  # ✅ dict ke andar name save karenge
         return redirect(url_for("index"))
     return render_template("signup.html")
 
@@ -88,4 +88,4 @@ def logout():
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(debug=True)
