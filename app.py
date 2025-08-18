@@ -14,48 +14,37 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Ignore razorpay pkg_resources warning
 warnings.filterwarnings("ignore", category=UserWarning, module="razorpay")
 
-# Flask app setup
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "supersecretkey")
 
-# File storage folders
 UPLOAD_FOLDER = "uploads"
 RESULTS_FOLDER = "results"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
-# Razorpay setup
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
-
-# ---------------------- DB Helper Functions ----------------------
+# ---------------------- DB Helper ----------------------
 def get_db_connection():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     return conn
 
-
 def init_db():
-    """Run this once to create DB schema if not exists."""
     with get_db_connection() as conn:
         with open("schema.sql") as f:
             conn.executescript(f.read())
 
-
 def clear_uploads():
-    """Remove all uploaded and result files"""
     for folder in [UPLOAD_FOLDER, RESULTS_FOLDER]:
         for f in os.listdir(folder):
             os.remove(os.path.join(folder, f))
 
-
 def user_can_highlight():
-    """Check if current user has valid subscription"""
     user_id = session.get("user_id")
     device_id = session.get("device_id")
     if not user_id or not device_id:
@@ -73,14 +62,12 @@ def user_can_highlight():
     if user["subscription_end"]:
         expiry = datetime.fromisoformat(user["subscription_end"])
         if datetime.now() > expiry:
-            # Expired subscription → deactivate
             conn = get_db_connection()
             conn.execute("UPDATE users SET subscription_active=0 WHERE id=?", (user_id,))
             conn.commit()
             conn.close()
             return False
     return True
-
 
 # ---------------------- Decorators ----------------------
 def login_required(f):
@@ -91,7 +78,6 @@ def login_required(f):
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated_function
-
 
 def subscription_required(f):
     @wraps(f)
@@ -104,7 +90,6 @@ def subscription_required(f):
             return redirect(url_for("subscribe"))
         return f(*args, **kwargs)
     return decorated_function
-
 
 # ---------------------- Routes ----------------------
 @app.route("/signup", methods=["GET", "POST"])
@@ -133,7 +118,6 @@ def signup():
             conn.close()
     return render_template("signup.html")
 
-
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -151,13 +135,11 @@ def login():
             flash("Invalid credentials.")
     return render_template("login.html")
 
-
 @app.route("/logout")
 def logout():
     session.clear()
     flash("Logged out successfully.")
     return redirect(url_for("login"))
-
 
 @app.route("/subscribe", methods=["GET", "POST"])
 def subscribe():
@@ -174,19 +156,16 @@ def subscribe():
             payment_id = data.get("razorpay_payment_id")
             signature = data.get("razorpay_signature")
             order_id = data.get("razorpay_order_id")
-
             user_id = session.get("user_id")
             if not user_id:
                 return jsonify({"success": False, "message": "Session expired. Please login again."})
 
-            # Verify payment
             client.utility.verify_payment_signature({
                 'razorpay_order_id': order_id,
                 'razorpay_payment_id': payment_id,
                 'razorpay_signature': signature
             })
 
-            # Payment verified → activate subscription
             start_date = datetime.now()
             end_date = start_date + timedelta(days=30)
 
@@ -203,18 +182,15 @@ def subscribe():
 
     return render_template("subscribe.html", razorpay_key_id=RAZORPAY_KEY_ID)
 
-
 @app.route("/dashboard")
 @login_required
 def dashboard():
     return render_template("dashboard.html")
 
-
 @app.route("/highlight", methods=["GET", "POST"])
 @subscription_required
 def highlight():
     return render_template("highlight.html")
-
 
 @app.route("/", methods=["GET", "POST"])
 @login_required
@@ -227,13 +203,15 @@ def index():
     conn.close()
     username = user["email"] if user else "User"
 
+    can_highlight = user_can_highlight()  # <-- template me variable pass
+
     if request.method == "POST":
         if request.form.get("action") == "refresh":
             clear_uploads()
             flash("Uploads and results cleared. Ready for new task.")
             return redirect(url_for("index"))
 
-        if not user_can_highlight():
+        if not can_highlight:
             flash("Highlight feature requires a paid subscription.")
             return redirect(url_for("subscribe"))
 
@@ -253,13 +231,17 @@ def index():
 
         output_pdf, not_found_excel = highlight_pdf(pdf_path, excel_path, highlight_type, RESULTS_FOLDER)
 
-    return render_template("index.html", output_pdf=output_pdf, not_found_excel=not_found_excel, username=username)
-
+    return render_template(
+        "index.html",
+        output_pdf=output_pdf,
+        not_found_excel=not_found_excel,
+        username=username,
+        can_highlight=can_highlight
+    )
 
 @app.route("/download/<filename>")
 def download_file(filename):
     return send_file(os.path.join(RESULTS_FOLDER, filename), as_attachment=True)
-
 
 if __name__ == "__main__":
     init_db()
