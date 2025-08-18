@@ -115,7 +115,7 @@ footer a { margin-right: 20px; text-decoration: none; color: #555; }
             <option value="esic">ESIC</option>
         </select>
 
-        <button type="submit" class="btn-custom">Highlight</button>
+        <button type="submit" class="btn-custom" id="highlightBtn">Highlight</button>
         <button type="submit" name="action" value="refresh" class="btn-refresh">Refresh / New Task</button>
     </form>
 
@@ -144,11 +144,14 @@ footer a { margin-right: 20px; text-decoration: none; color: #555; }
 </footer>
 
 <script>
-// Subscription enforcement
-{% if not can_highlight %}
-    alert("You need an active subscription to use this feature!");
-    window.location.href = "/subscribe";
-{% endif %}
+// Prevent submission if user doesn't have subscription
+document.getElementById('highlightForm').addEventListener('submit', function(e){
+    {% if not can_highlight %}
+        e.preventDefault();
+        alert("You need an active subscription to use this feature!");
+        window.location.href = "/subscribe";
+    {% endif %}
+});
 </script>
 
 </body>
