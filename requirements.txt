@@ -1,4 +1,0 @@
-setuptools>=65.5.1
-wheel>=0.38.4
-cython>=0.29.36
-pandas<2.0
