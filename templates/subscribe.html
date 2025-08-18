@@ -56,36 +56,9 @@ h3 {
 
 <script>
 document.getElementById('rzp-button').onclick = function(e){
-    fetch("/create_order", {method: "POST"})
-    .then(res => res.json())
-    .then(data => {
-        var options = {
-            "key": "{{ razorpay_key_id }}",
-            "amount": data.amount, // in paise
-            "currency": "INR",
-            "name": "We ❤️ Doc",
-            "description": "Monthly Subscription",
-            "order_id": data.id,
-            "handler": function (response){
-                // Payment successful, send to server for verification
-                fetch("/subscribe", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(response)
-                })
-                .then(res => res.json())
-                .then(resp => {
-                    alert(resp.message);
-                    if(resp.success){ window.location.href = "/"; }
-                });
-            },
-            "theme": { "color": "#4e9af1" }
-        };
-        var rzp1 = new Razorpay(options);
-        rzp1.open();
-        e.preventDefault();
-    });
-}
+    // Directly open Razorpay subscription link
+    window.open("https://rzp.io/rzp/RQURAyE", "_blank");
+};
 </script>
 
 </body>
