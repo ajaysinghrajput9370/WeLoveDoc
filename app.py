@@ -166,12 +166,19 @@ def subscribe():
         return redirect(url_for("login"))
 
     if request.method == "POST":
-        data = request.get_json()
-        payment_id = data.get("razorpay_payment_id")
-        signature = data.get("razorpay_signature")
-        order_id = data.get("razorpay_order_id")
-
         try:
+            data = request.get_json()
+            if not data:
+                return jsonify({"success": False, "message": "Payment data missing. Please try again."})
+
+            payment_id = data.get("razorpay_payment_id")
+            signature = data.get("razorpay_signature")
+            order_id = data.get("razorpay_order_id")
+
+            user_id = session.get("user_id")
+            if not user_id:
+                return jsonify({"success": False, "message": "Session expired. Please login again."})
+
             # Verify payment
             client.utility.verify_payment_signature({
                 'razorpay_order_id': order_id,
@@ -180,7 +187,6 @@ def subscribe():
             })
 
             # Payment verified → activate subscription
-            user_id = session["user_id"]
             start_date = datetime.now()
             end_date = start_date + timedelta(days=30)
 
@@ -192,8 +198,8 @@ def subscribe():
             conn.commit()
             conn.close()
             return jsonify({"success": True, "message": "Subscription activated!"})
-        except:
-            return jsonify({"success": False, "message": "Payment verification failed. Try again."})
+        except Exception as e:
+            return jsonify({"success": False, "message": f"Payment verification failed: {str(e)}"})
 
     return render_template("subscribe.html", razorpay_key_id=RAZORPAY_KEY_ID)
 
