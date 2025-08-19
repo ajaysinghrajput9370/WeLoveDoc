@@ -5,11 +5,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from PyPDF2 import PdfReader, PdfWriter
 import pandas as pd
 
-# Flask App
+# ---------------- Flask App ----------------
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
-# DB setup
+# ---------------- DB Setup ----------------
 DB_NAME = "users.db"
 
 def init_db():
@@ -27,30 +27,25 @@ def init_db():
 
 init_db()
 
-# ---------- User System ----------
+# ---------------- User System ----------------
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
-
         if not email or not password:
             flash("Please enter both email and password.", "danger")
             return redirect(url_for("signup"))
-
         hashed_pw = generate_password_hash(password)
-
         try:
             with sqlite3.connect(DB_NAME) as conn:
                 cur = conn.cursor()
                 cur.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, hashed_pw))
                 conn.commit()
-            # Auto-login after signup
             session["user"] = email
             flash("Signup successful! You are now logged in.", "success")
             return redirect(url_for("home"))
         except sqlite3.IntegrityError:
-            # If email exists, auto-login with password check
             with sqlite3.connect(DB_NAME) as conn:
                 cur = conn.cursor()
                 cur.execute("SELECT password FROM users WHERE email=?", (email,))
@@ -62,7 +57,6 @@ def signup():
             else:
                 flash("Email already exists with different password!", "danger")
                 return redirect(url_for("signup"))
-
     return render_template("signup.html")
 
 @app.route("/login", methods=["GET", "POST"])
@@ -70,16 +64,13 @@ def login():
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
-
         if not email or not password:
             flash("Please enter both email and password.", "danger")
             return redirect(url_for("login"))
-
         with sqlite3.connect(DB_NAME) as conn:
             cur = conn.cursor()
             cur.execute("SELECT password FROM users WHERE email=?", (email,))
             row = cur.fetchone()
-
         if row and check_password_hash(row[0], password):
             session["user"] = email
             flash("Login successful!", "success")
@@ -87,7 +78,6 @@ def login():
         else:
             flash("Invalid credentials!", "danger")
             return redirect(url_for("login"))
-
     return render_template("login.html")
 
 @app.route("/logout")
@@ -96,14 +86,21 @@ def logout():
     flash("Logged out successfully.", "info")
     return redirect(url_for("login"))
 
-# ---------- Home ----------
+# ---------------- Home ----------------
+@app.route("/")
 @app.route("/home")
 def home():
     if "user" not in session:
         return redirect(url_for("login"))
-    return render_template("home.html", user=session["user"])
+    # Fetch subscription status
+    with sqlite3.connect(DB_NAME) as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT is_subscribed FROM users WHERE email=?", (session["user"],))
+        row = cur.fetchone()
+        subscribed = bool(row[0]) if row else False
+    return render_template("home.html", username=session["user"], subscribed=subscribed)
 
-# ---------- Subscription Activation ----------
+# ---------------- Subscription Activation ----------------
 @app.route("/activate")
 def activate():
     if "user" not in session:
@@ -115,7 +112,7 @@ def activate():
     flash("Subscription activated! You can now use the highlight tool.", "success")
     return redirect(url_for("home"))
 
-# ---------- File Upload & Highlight ----------
+# ---------------- Upload & Highlight ----------------
 UPLOAD_FOLDER = "uploads"
 RESULTS_FOLDER = "results"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -138,7 +135,6 @@ def highlight():
     if request.method == "POST":
         pdf_file = request.files.get("pdf")
         excel_file = request.files.get("excel")
-
         if not pdf_file or not excel_file:
             flash("Please upload both PDF and Excel.", "danger")
             return redirect(request.url)
@@ -155,10 +151,9 @@ def highlight():
 
     return render_template("highlight.html")
 
-# ---------- Highlight Processing ----------
+# ---------------- Highlight Processing ----------------
 def process_files(pdf_path, excel_path, highlight_type="uan"):
-    results_folder = RESULTS_FOLDER
-    os.makedirs(results_folder, exist_ok=True)
+    os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
     # Read Excel
     df = pd.read_excel(excel_path)
@@ -174,6 +169,7 @@ def process_files(pdf_path, excel_path, highlight_type="uan"):
         found_any = False
         for value in highlight_values:
             if value in text:
+                # Currently generic highlight rectangle
                 try:
                     page.add_highlight_annotation([50, 750, 200, 770])
                 except Exception:
@@ -183,27 +179,27 @@ def process_files(pdf_path, excel_path, highlight_type="uan"):
             unmatched.extend(highlight_values)
         writer.add_page(page)
 
-    result_pdf_path = os.path.join(results_folder, "highlighted.pdf")
+    result_pdf_path = os.path.join(RESULTS_FOLDER, "highlighted.pdf")
     with open(result_pdf_path, "wb") as f:
         writer.write(f)
 
-    result_excel_path = os.path.join(results_folder, "unmatched.xlsx")
+    result_excel_path = os.path.join(RESULTS_FOLDER, "unmatched.xlsx")
     pd.DataFrame(unmatched, columns=[highlight_type]).to_excel(result_excel_path, index=False)
 
     return "highlighted.pdf", "unmatched.xlsx"
 
-# ---------- Download ----------
+# ---------------- Download ----------------
 @app.route("/results/<filename>")
 def download(filename):
     return send_from_directory(RESULTS_FOLDER, filename)
 
-# ---------- Subscription popup page ----------
+# ---------------- Subscription Popup ----------------
 @app.route("/subscribe_popup")
 def subscribe_popup():
     if "user" not in session:
         return redirect(url_for("login"))
-    return render_template("subscribe_popup.html")  # Small popup template
+    return render_template("subscribe_popup.html")
 
-# ---------- Run ----------
+# ---------------- Run App ----------------
 if __name__ == "__main__":
     app.run(debug=True)
