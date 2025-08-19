@@ -1,9 +1,6 @@
-Flask
-gunicorn
-PyPDF2
-pandas
-openpyxl
-reportlab
-PyMuPDF==1.24.9
-razorpay
-python-dotenv
+Flask==2.3.3
+Werkzeug==2.3.6
+PyPDF2==3.0.0
+pandas==2.1.1
+openpyxl==3.1.2
+xlrd==2.0.1
