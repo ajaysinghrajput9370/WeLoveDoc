@@ -1,24 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
-<h2 class="text-center">Welcome, {{ username }}!</h2>
+<h1 class="text-center mb-4">Highlight Your PDF</h1>
 
 {% if subscribed %}
 <div class="upload-container">
-    <form method="post" action="{{ url_for('highlight') }}" enctype="multipart/form-data">
-        <label>Select PDF:</label>
-        <input type="file" name="pdf" accept=".pdf" required><br>
-        <label>Select Excel:</label>
-        <input type="file" name="excel" accept=".xlsx,.xls" required><br>
-        <label>Highlight Type:</label><br>
-        <input type="radio" name="highlight_type" value="uan" checked> UAN
-        <input type="radio" name="highlight_type" value="esic"> ESIC<br><br>
-        <button type="submit" class="btn btn-primary">Highlight PDF</button>
-    </form>
+  <form method="post" action="{{ url_for('highlight') }}" enctype="multipart/form-data">
+    <label>Select PDF</label>
+    <input type="file" name="pdf" required><br>
+    <label>Select Excel</label>
+    <input type="file" name="excel" required><br>
+    <button type="submit">Highlight PDF</button>
+  </form>
 </div>
 {% else %}
 <div class="text-center">
-    <p>You do not have a subscription.</p>
-    <a href="{{ url_for('activate') }}" class="btn btn-success">Activate Subscription</a>
+  <p>You do not have a subscription.</p>
+  <a href="{{ url_for('activate') }}" class="btn btn-success">Activate Subscription</a>
 </div>
 {% endif %}
 {% endblock %}
