@@ -105,8 +105,8 @@ def activate():
     return redirect(url_for("home"))
 
 # ---------------- Upload & Highlight ----------------
-UPLOAD_FOLDER = "static/uploads"
-RESULTS_FOLDER = "static/results"
+UPLOAD_FOLDER = "uploads"
+RESULTS_FOLDER = "results"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
@@ -128,7 +128,6 @@ def highlight():
         pdf_file = request.files.get("pdf")
         excel_file = request.files.get("excel")
         highlight_type = request.form.get("highlight_type", "uan")
-
         if not pdf_file or not excel_file:
             flash("Please upload both PDF and Excel.", "danger")
             return redirect(request.url)
@@ -149,9 +148,11 @@ def highlight():
 def process_files(pdf_path, excel_path, highlight_type="uan"):
     os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
+    # Read Excel
     df = pd.read_excel(excel_path)
     highlight_values = df[highlight_type].astype(str).tolist()
 
+    # Read PDF
     reader = PdfReader(pdf_path)
     writer = PdfWriter()
     unmatched = []
