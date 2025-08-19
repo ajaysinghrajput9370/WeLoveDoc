@@ -4,34 +4,42 @@
 
   <h2>Select Tool & Upload Files</h2>
 
-  <!-- Tool radio buttons -->
-  <div style="margin:30px 0;">
-    <input type="radio" name="tool" value="uan" id="uan" onclick="showUpload()" checked>
-    <label for="uan">UAN Highlight</label>
+  {% if not subscribed %}
+    <!-- Subscription Popup for Non-Subscribed Users -->
+    <div class="card text-center p-4">
+      <p>You do not have a subscription. Activate to use the highlight tool.</p>
+      <a href="https://rzp.io/rzp/rCYKl98" class="btn btn-success w-50 mb-2">Subscribe ₹49/Month</a>
+    </div>
+  {% else %}
+    <!-- Tool Selection -->
+    <div style="margin:30px 0;">
+      <input type="radio" name="tool" value="uan" id="uan" onclick="showUpload()" checked>
+      <label for="uan">UAN Highlight</label>
 
-    <input type="radio" name="tool" value="esic" id="esic" onclick="showUpload()">
-    <label for="esic">ESIC Highlight (full row)</label>
-  </div>
+      <input type="radio" name="tool" value="esic" id="esic" onclick="showUpload()">
+      <label for="esic">ESIC Highlight (full row)</label>
+    </div>
 
-  <!-- Upload Section -->
-  <form method="POST" enctype="multipart/form-data" id="upload-form" style="display:inline-block;">
-    <input type="hidden" name="tool" id="selected-tool" value="uan">
+    <!-- Upload Section -->
+    <form method="POST" enctype="multipart/form-data" id="upload-form" style="display:inline-block;">
+      <input type="hidden" name="tool" id="selected-tool" value="uan">
 
-    <label>Select PDF</label>
-    <input type="file" name="pdf" accept=".pdf" required><br><br>
+      <label>Select PDF</label>
+      <input type="file" name="pdf" accept=".pdf" required><br><br>
 
-    <label>Select Excel</label>
-    <input type="file" name="excel" accept=".xls,.xlsx" required><br><br>
+      <label>Select Excel</label>
+      <input type="file" name="excel" accept=".xls,.xlsx" required><br><br>
 
-    <button type="submit" style="padding:10px 30px; font-size:16px; background:#28a745; color:white; border-radius:8px;">Highlight</button>
-  </form>
+      <button type="submit" style="padding:10px 30px; font-size:16px; background:#28a745; color:white; border-radius:8px;">Highlight</button>
+    </form>
 
-  <!-- Download Links -->
-  {% if result_pdf %}
-  <div style="margin-top:30px;">
-    <a href="{{ url_for('static', filename='results/' + result_pdf) }}" download>Download Highlighted PDF</a><br>
-    <a href="{{ url_for('static', filename='results/' + not_found_excel) }}" download>Download Not Found Excel</a>
-  </div>
+    <!-- Download Links -->
+    {% if pdf_file %}
+    <div style="margin-top:30px;">
+      <a href="{{ url_for('download', filename=pdf_file) }}" download>Download Highlighted PDF</a><br>
+      <a href="{{ url_for('download', filename=excel_file) }}" download>Download Not Found Excel</a>
+    </div>
+    {% endif %}
   {% endif %}
 
 </div>
