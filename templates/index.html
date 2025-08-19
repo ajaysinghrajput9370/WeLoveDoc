@@ -92,14 +92,14 @@ footer {
       {% endif %}
     {% endwith %}
 
-    {% if not username %}
+    {% if not session.user %}
     <form method="post" action="{{ url_for('signup') }}">
         <input class="form-control" type="text" name="email" placeholder="Enter your email" required>
         <input class="form-control" type="password" name="password" placeholder="Enter password" required>
         <button type="submit" class="btn-custom">Sign Up / Login</button>
     </form>
     {% else %}
-        <p class="mt-4">You are logged in as <b>{{ username }}</b> 🎉</p>
+        <p class="mt-4">You are logged in as <b>{{ session.user }}</b> 🎉</p>
         <a href="{{ url_for('home') }}" class="btn btn-primary mt-3">Go to Home</a>
         <a href="{{ url_for('logout') }}" class="btn btn-danger mt-3">Logout</a>
     {% endif %}
