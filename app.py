@@ -92,12 +92,13 @@ def logout():
 def home():
     if "user" not in session:
         return redirect(url_for("login"))
-    # Fetch subscription status
+    
     with sqlite3.connect(DB_NAME) as conn:
         cur = conn.cursor()
         cur.execute("SELECT is_subscribed FROM users WHERE email=?", (session["user"],))
         row = cur.fetchone()
         subscribed = bool(row[0]) if row else False
+
     return render_template("home.html", username=session["user"], subscribed=subscribed)
 
 # ---------------- Subscription Activation ----------------
@@ -169,7 +170,6 @@ def process_files(pdf_path, excel_path, highlight_type="uan"):
         found_any = False
         for value in highlight_values:
             if value in text:
-                # Currently generic highlight rectangle
                 try:
                     page.add_highlight_annotation([50, 750, 200, 770])
                 except Exception:
