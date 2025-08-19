@@ -18,11 +18,11 @@
             <!-- Not subscribed -->
             <p class="text-center text-warning">You need an active subscription to highlight PDFs.</p>
             <div class="text-center mt-3">
-                <a href="{{ url_for('subscribe') }}" class="btn btn-success">Subscribe ₹49/Month</a>
+                <a href="{{ url_for('activate') }}" class="btn btn-success">Subscribe ₹49/Month</a>
             </div>
         {% else %}
             <!-- Highlight Form -->
-            <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="mx-auto" style="max-width:500px;">
+            <form method="post" action="{{ url_for('highlight') }}" enctype="multipart/form-data" class="mx-auto" style="max-width:500px;">
                 <div class="mb-3">
                     <label for="pdf" class="form-label">Upload PDF</label>
                     <input type="file" class="form-control" id="pdf" name="pdf" accept=".pdf" required>
