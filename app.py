@@ -46,17 +46,8 @@ def signup():
             flash("Signup successful! You are now logged in.", "success")
             return redirect(url_for("home"))
         except sqlite3.IntegrityError:
-            with sqlite3.connect(DB_NAME) as conn:
-                cur = conn.cursor()
-                cur.execute("SELECT password FROM users WHERE email=?", (email,))
-                row = cur.fetchone()
-            if row and check_password_hash(row[0], password):
-                session["user"] = email
-                flash("Logged in successfully!", "success")
-                return redirect(url_for("home"))
-            else:
-                flash("Email already exists with different password!", "danger")
-                return redirect(url_for("signup"))
+            flash("Email already exists!", "danger")
+            return redirect(url_for("signup"))
     return render_template("signup.html")
 
 @app.route("/login", methods=["GET", "POST"])
@@ -114,8 +105,8 @@ def activate():
     return redirect(url_for("home"))
 
 # ---------------- Upload & Highlight ----------------
-UPLOAD_FOLDER = "uploads"
-RESULTS_FOLDER = "results"
+UPLOAD_FOLDER = "static/uploads"
+RESULTS_FOLDER = "static/results"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
@@ -131,11 +122,13 @@ def highlight():
         row = cur.fetchone()
         if not row or row[0] == 0:
             flash("You need a subscription to highlight PDFs.", "warning")
-            return redirect(url_for("subscribe_popup"))
+            return redirect(url_for("home"))
 
     if request.method == "POST":
         pdf_file = request.files.get("pdf")
         excel_file = request.files.get("excel")
+        highlight_type = request.form.get("highlight_type", "uan")
+
         if not pdf_file or not excel_file:
             flash("Please upload both PDF and Excel.", "danger")
             return redirect(request.url)
@@ -145,10 +138,10 @@ def highlight():
         pdf_file.save(pdf_path)
         excel_file.save(excel_path)
 
-        result_pdf, result_excel = process_files(pdf_path, excel_path)
+        result_pdf, result_excel = process_files(pdf_path, excel_path, highlight_type)
 
         flash("Files processed successfully!", "success")
-        return render_template("result.html", pdf_file=result_pdf, excel_file=result_excel)
+        return render_template("highlight.html", result_pdf=result_pdf, not_found_excel=result_excel)
 
     return render_template("highlight.html")
 
@@ -156,11 +149,9 @@ def highlight():
 def process_files(pdf_path, excel_path, highlight_type="uan"):
     os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
-    # Read Excel
     df = pd.read_excel(excel_path)
     highlight_values = df[highlight_type].astype(str).tolist()
 
-    # Read PDF
     reader = PdfReader(pdf_path)
     writer = PdfWriter()
     unmatched = []
@@ -192,13 +183,6 @@ def process_files(pdf_path, excel_path, highlight_type="uan"):
 @app.route("/results/<filename>")
 def download(filename):
     return send_from_directory(RESULTS_FOLDER, filename)
-
-# ---------------- Subscription Popup ----------------
-@app.route("/subscribe_popup")
-def subscribe_popup():
-    if "user" not in session:
-        return redirect(url_for("login"))
-    return render_template("subscribe_popup.html")
 
 # ---------------- Run App ----------------
 if __name__ == "__main__":
