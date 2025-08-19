@@ -31,8 +31,12 @@ init_db()
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        if not email or not password:
+            flash("Please enter both email and password.", "danger")
+            return redirect(url_for("signup"))
 
         hashed_pw = generate_password_hash(password)
 
@@ -46,14 +50,19 @@ def signup():
             return redirect(url_for("subscribe"))
         except sqlite3.IntegrityError:
             flash("Email already exists!", "danger")
+            return redirect(url_for("signup"))
 
     return render_template("signup.html")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        if not email or not password:
+            flash("Please enter both email and password.", "danger")
+            return redirect(url_for("login"))
 
         with sqlite3.connect(DB_NAME) as conn:
             cur = conn.cursor()
@@ -66,6 +75,7 @@ def login():
             return redirect(url_for("subscribe"))
         else:
             flash("Invalid credentials!", "danger")
+            return redirect(url_for("login"))
 
     return render_template("login.html")
 
@@ -116,8 +126,8 @@ def upload():
             return redirect(url_for("subscribe"))
 
     if request.method == "POST":
-        pdf_file = request.files["pdf"]
-        excel_file = request.files["excel"]
+        pdf_file = request.files.get("pdf")
+        excel_file = request.files.get("excel")
 
         if not pdf_file or not excel_file:
             flash("Please upload both PDF and Excel.", "danger")
@@ -151,14 +161,18 @@ def process_files(pdf_path, excel_path, highlight_type="uan"):
     unmatched = []
 
     for page in reader.pages:
-        text = page.extract_text()
-        found = False
+        text = page.extract_text() or ""
+        found_any = False
         for value in highlight_values:
             if value in text:
-                page.add_highlight_annotation([0, 0, 100, 20])  # Dummy highlight
-                found = True
-        if not found:
-            unmatched.append(value)
+                # Simple dummy highlight
+                try:
+                    page.add_highlight_annotation([50, 750, 200, 770])
+                except Exception:
+                    pass
+                found_any = True
+        if not found_any:
+            unmatched.extend(highlight_values)
         writer.add_page(page)
 
     # Save highlighted PDF
