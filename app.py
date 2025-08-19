@@ -5,11 +5,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from PyPDF2 import PdfReader, PdfWriter
 import pandas as pd
 
-# ---------------- Flask App ----------------
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
-# ---------------- DB Setup ----------------
 DB_NAME = "users.db"
 
 def init_db():
@@ -23,178 +21,123 @@ def init_db():
             is_subscribed INTEGER DEFAULT 0
         )
         """)
-    print("✅ Database initialized")
+    print("Database initialized")
 
 init_db()
 
-# ---------------- User System ----------------
-@app.route("/signup", methods=["GET", "POST"])
+@app.route("/signup", methods=["GET","POST"])
 def signup():
-    if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
-        if not email or not password:
-            flash("Please enter both email and password.", "danger")
-            return redirect(url_for("signup"))
-        hashed_pw = generate_password_hash(password)
+    if request.method=="POST":
+        email=request.form["email"]
+        password=request.form["password"]
+        hashed=generate_password_hash(password)
         try:
             with sqlite3.connect(DB_NAME) as conn:
-                cur = conn.cursor()
-                cur.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, hashed_pw))
-                conn.commit()
-            session["user"] = email
-            flash("Signup successful! You are now logged in.", "success")
+                conn.execute("INSERT INTO users(email,password) VALUES(?,?)",(email,hashed))
+            session["user"]=email
+            flash("Signup successful!","success")
             return redirect(url_for("home"))
         except sqlite3.IntegrityError:
-            flash("Email already exists!", "danger")
+            flash("Email exists!","danger")
             return redirect(url_for("signup"))
     return render_template("signup.html")
 
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/login", methods=["GET","POST"])
 def login():
-    if request.method == "POST":
-        email = request.form.get("email")
-        password = request.form.get("password")
-        if not email or not password:
-            flash("Please enter both email and password.", "danger")
-            return redirect(url_for("login"))
+    if request.method=="POST":
+        email=request.form["email"]
+        password=request.form["password"]
         with sqlite3.connect(DB_NAME) as conn:
-            cur = conn.cursor()
-            cur.execute("SELECT password FROM users WHERE email=?", (email,))
-            row = cur.fetchone()
-        if row and check_password_hash(row[0], password):
-            session["user"] = email
-            flash("Login successful!", "success")
+            cur=conn.cursor()
+            cur.execute("SELECT password FROM users WHERE email=?",(email,))
+            row=cur.fetchone()
+        if row and check_password_hash(row[0],password):
+            session["user"]=email
+            flash("Login successful","success")
             return redirect(url_for("home"))
         else:
-            flash("Invalid credentials!", "danger")
+            flash("Invalid credentials","danger")
             return redirect(url_for("login"))
     return render_template("login.html")
 
 @app.route("/logout")
 def logout():
-    session.pop("user", None)
-    flash("Logged out successfully.", "info")
+    session.pop("user",None)
+    flash("Logged out","info")
     return redirect(url_for("login"))
 
-# ---------------- Home ----------------
 @app.route("/")
 @app.route("/home")
 def home():
     if "user" not in session:
         return redirect(url_for("login"))
-    
     with sqlite3.connect(DB_NAME) as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT is_subscribed FROM users WHERE email=?", (session["user"],))
-        row = cur.fetchone()
-        subscribed = bool(row[0]) if row else False
-
+        cur=conn.cursor()
+        cur.execute("SELECT is_subscribed FROM users WHERE email=?",(session["user"],))
+        row=cur.fetchone()
+        subscribed=bool(row[0]) if row else False
     return render_template("home.html", username=session["user"], subscribed=subscribed)
 
-# ---------------- Subscription Activation ----------------
 @app.route("/activate")
 def activate():
     if "user" not in session:
         return redirect(url_for("login"))
     with sqlite3.connect(DB_NAME) as conn:
-        cur = conn.cursor()
-        cur.execute("UPDATE users SET is_subscribed=1 WHERE email=?", (session["user"],))
+        conn.execute("UPDATE users SET is_subscribed=1 WHERE email=?",(session["user"],))
         conn.commit()
-    flash("Subscription activated! You can now use the highlight tool.", "success")
+    flash("Subscription activated!","success")
     return redirect(url_for("home"))
 
-# ---------------- Upload & Highlight ----------------
-UPLOAD_FOLDER = "uploads"
-RESULTS_FOLDER = "results"
+UPLOAD_FOLDER="uploads"
+RESULTS_FOLDER="results"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
-@app.route("/highlight", methods=["GET", "POST"])
+@app.route("/highlight", methods=["GET","POST"])
 def highlight():
     if "user" not in session:
         return redirect(url_for("login"))
-
-    # Check subscription
     with sqlite3.connect(DB_NAME) as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT is_subscribed FROM users WHERE email=?", (session["user"],))
-        row = cur.fetchone()
-        if not row or row[0] == 0:
-            flash("You need a subscription to highlight PDFs.", "warning")
+        cur=conn.cursor()
+        cur.execute("SELECT is_subscribed FROM users WHERE email=?",(session["user"],))
+        row=cur.fetchone()
+        if not row or row[0]==0:
+            flash("Subscription required","warning")
             return redirect(url_for("subscribe_popup"))
-
-    if request.method == "POST":
-        pdf_file = request.files.get("pdf")
-        excel_file = request.files.get("excel")
-        highlight_type = request.form.get("highlight_type", "uan")
+    if request.method=="POST":
+        pdf_file=request.files.get("pdf")
+        excel_file=request.files.get("excel")
         if not pdf_file or not excel_file:
-            flash("Please upload both PDF and Excel.", "danger")
+            flash("Upload both files","danger")
             return redirect(request.url)
-
-        pdf_path = os.path.join(UPLOAD_FOLDER, pdf_file.filename)
-        excel_path = os.path.join(UPLOAD_FOLDER, excel_file.filename)
+        pdf_path=os.path.join(UPLOAD_FOLDER,pdf_file.filename)
+        excel_path=os.path.join(UPLOAD_FOLDER,excel_file.filename)
         pdf_file.save(pdf_path)
         excel_file.save(excel_path)
-
-        result_pdf, result_excel = process_files(pdf_path, excel_path, highlight_type)
-
-        flash("Files processed successfully!", "success")
-        return render_template("highlight.html", result_pdf=result_pdf, result_excel=result_excel)
-
+        result_pdf, result_excel = process_files(pdf_path,excel_path)
+        flash("Highlight done!","success")
+        return render_template("result.html", pdf_file=result_pdf, excel_file=result_excel)
     return render_template("highlight.html")
 
-# ---------------- Highlight Processing ----------------
 def process_files(pdf_path, excel_path, highlight_type="uan"):
-    os.makedirs(RESULTS_FOLDER, exist_ok=True)
-
-    df = pd.read_excel(excel_path)
-    highlight_values = df[highlight_type].astype(str).tolist()
-
-    reader = PdfReader(pdf_path)
-    writer = PdfWriter()
-    unmatched = []
-
+    df=pd.read_excel(excel_path)
+    values=df[highlight_type].astype(str).tolist()
+    reader=PdfReader(pdf_path)
+    writer=PdfWriter()
+    unmatched=[]
     for page in reader.pages:
-        text = page.extract_text() or ""
-        found_any = False
-        for value in highlight_values:
-            if value in text:
+        text=page.extract_text() or ""
+        found=False
+        for val in values:
+            if val in text:
                 try:
-                    page.add_highlight_annotation([50, 750, 200, 770])
-                except Exception:
-                    pass
-                found_any = True
-        if not found_any:
-            unmatched.extend(highlight_values)
+                    page.add_highlight_annotation([50,750,200,770])
+                except: pass
+                found=True
+        if not found:
+            unmatched.extend(values)
         writer.add_page(page)
-
-    result_pdf_path = os.path.join(RESULTS_FOLDER, "highlighted.pdf")
-    with open(result_pdf_path, "wb") as f:
+    result_pdf=os.path.join(RESULTS_FOLDER,"highlighted.pdf")
+    with open(result_pdf,"wb") as f:
         writer.write(f)
-
-    result_excel_path = os.path.join(RESULTS_FOLDER, "unmatched.xlsx")
-    pd.DataFrame(unmatched, columns=[highlight_type]).to_excel(result_excel_path, index=False)
-
-    return "highlighted.pdf", "unmatched.xlsx"
-
-# ---------------- Download ----------------
-@app.route("/results/<filename>")
-def download(filename):
-    return send_from_directory(RESULTS_FOLDER, filename)
-
-# ---------------- Subscription Popup ----------------
-@app.route("/subscribe_popup")
-def subscribe_popup():
-    if "user" not in session:
-        return redirect(url_for("login"))
-    return render_template("subscribe_popup.html")
-
-# ---------------- Subscription Plans ----------------
-@app.route("/plans")
-def plans():
-    return render_template("plan.html")
-
-# ---------------- Run App ----------------
-if __name__ == "__main__":
-    app.run(debug=True)
+    result_excel=os.path.join(RESULTS_FOLDER,"unmatched
