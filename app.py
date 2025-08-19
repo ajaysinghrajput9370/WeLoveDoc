@@ -45,12 +45,23 @@ def signup():
                 cur = conn.cursor()
                 cur.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, hashed_pw))
                 conn.commit()
+            # Auto-login after signup
             session["user"] = email
             flash("Signup successful! You are now logged in.", "success")
-            return redirect(url_for("subscribe"))
+            return redirect(url_for("home"))
         except sqlite3.IntegrityError:
-            flash("Email already exists!", "danger")
-            return redirect(url_for("signup"))
+            # If email exists, auto-login with password check
+            with sqlite3.connect(DB_NAME) as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT password FROM users WHERE email=?", (email,))
+                row = cur.fetchone()
+            if row and check_password_hash(row[0], password):
+                session["user"] = email
+                flash("Logged in successfully!", "success")
+                return redirect(url_for("home"))
+            else:
+                flash("Email already exists with different password!", "danger")
+                return redirect(url_for("signup"))
 
     return render_template("signup.html")
 
@@ -72,7 +83,7 @@ def login():
         if row and check_password_hash(row[0], password):
             session["user"] = email
             flash("Login successful!", "success")
-            return redirect(url_for("subscribe"))
+            return redirect(url_for("home"))
         else:
             flash("Invalid credentials!", "danger")
             return redirect(url_for("login"))
@@ -85,26 +96,24 @@ def logout():
     flash("Logged out successfully.", "info")
     return redirect(url_for("login"))
 
-# ---------- Subscription ----------
-@app.route("/subscribe")
-def subscribe():
+# ---------- Home ----------
+@app.route("/home")
+def home():
     if "user" not in session:
-        flash("Please login first.", "warning")
         return redirect(url_for("login"))
-    return render_template("subscribe.html")
+    return render_template("home.html", user=session["user"])
 
+# ---------- Subscription Activation ----------
 @app.route("/activate")
 def activate():
     if "user" not in session:
         return redirect(url_for("login"))
-
     with sqlite3.connect(DB_NAME) as conn:
         cur = conn.cursor()
         cur.execute("UPDATE users SET is_subscribed=1 WHERE email=?", (session["user"],))
         conn.commit()
-
     flash("Subscription activated! You can now use the highlight tool.", "success")
-    return redirect(url_for("upload"))
+    return redirect(url_for("home"))
 
 # ---------- File Upload & Highlight ----------
 UPLOAD_FOLDER = "uploads"
@@ -112,18 +121,19 @@ RESULTS_FOLDER = "results"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
-@app.route("/upload", methods=["GET", "POST"])
-def upload():
+@app.route("/highlight", methods=["GET", "POST"])
+def highlight():
     if "user" not in session:
         return redirect(url_for("login"))
 
+    # Check subscription
     with sqlite3.connect(DB_NAME) as conn:
         cur = conn.cursor()
         cur.execute("SELECT is_subscribed FROM users WHERE email=?", (session["user"],))
         row = cur.fetchone()
         if not row or row[0] == 0:
-            flash("Please subscribe first to use highlight tool.", "danger")
-            return redirect(url_for("subscribe"))
+            flash("You need a subscription to highlight PDFs.", "warning")
+            return redirect(url_for("subscribe_popup"))
 
     if request.method == "POST":
         pdf_file = request.files.get("pdf")
@@ -143,9 +153,9 @@ def upload():
         flash("Files processed successfully!", "success")
         return render_template("result.html", pdf_file=result_pdf, excel_file=result_excel)
 
-    return render_template("upload.html")
+    return render_template("highlight.html")
 
-# ---------- Processing Logic ----------
+# ---------- Highlight Processing ----------
 def process_files(pdf_path, excel_path, highlight_type="uan"):
     results_folder = RESULTS_FOLDER
     os.makedirs(results_folder, exist_ok=True)
@@ -157,7 +167,6 @@ def process_files(pdf_path, excel_path, highlight_type="uan"):
     # Read PDF
     reader = PdfReader(pdf_path)
     writer = PdfWriter()
-
     unmatched = []
 
     for page in reader.pages:
@@ -165,7 +174,6 @@ def process_files(pdf_path, excel_path, highlight_type="uan"):
         found_any = False
         for value in highlight_values:
             if value in text:
-                # Simple dummy highlight
                 try:
                     page.add_highlight_annotation([50, 750, 200, 770])
                 except Exception:
@@ -175,12 +183,10 @@ def process_files(pdf_path, excel_path, highlight_type="uan"):
             unmatched.extend(highlight_values)
         writer.add_page(page)
 
-    # Save highlighted PDF
     result_pdf_path = os.path.join(results_folder, "highlighted.pdf")
     with open(result_pdf_path, "wb") as f:
         writer.write(f)
 
-    # Save unmatched Excel
     result_excel_path = os.path.join(results_folder, "unmatched.xlsx")
     pd.DataFrame(unmatched, columns=[highlight_type]).to_excel(result_excel_path, index=False)
 
@@ -191,10 +197,12 @@ def process_files(pdf_path, excel_path, highlight_type="uan"):
 def download(filename):
     return send_from_directory(RESULTS_FOLDER, filename)
 
-# ---------- Home ----------
-@app.route("/")
-def index():
-    return render_template("index.html")
+# ---------- Subscription popup page ----------
+@app.route("/subscribe_popup")
+def subscribe_popup():
+    if "user" not in session:
+        return redirect(url_for("login"))
+    return render_template("subscribe_popup.html")  # Small popup template
 
 # ---------- Run ----------
 if __name__ == "__main__":
