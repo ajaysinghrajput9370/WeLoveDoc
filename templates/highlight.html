@@ -1,25 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="text-center">
-    <h2>Select Tool & Upload Files</h2>
-    <form method="POST" enctype="multipart/form-data">
-        <input type="hidden" name="highlight_type" id="highlight_type" value="uan">
-        <div style="margin:15px;">
-            <input type="radio" name="highlight_type" value="uan" checked> UAN
-            <input type="radio" name="highlight_type" value="esic"> ESIC
-        </div>
-        <label>Select PDF:</label>
-        <input type="file" name="pdf" accept=".pdf" required><br>
-        <label>Select Excel:</label>
-        <input type="file" name="excel" accept=".xls,.xlsx" required><br><br>
-        <button type="submit" class="btn btn-primary">Highlight PDF</button>
-    </form>
-
-    {% if result_pdf %}
-    <div style="margin-top:20px;">
-        <a href="{{ url_for('download', filename=result_pdf) }}" class="btn btn-success">Download Highlighted PDF</a>
-        <a href="{{ url_for('download', filename=result_excel) }}" class="btn btn-info">Download Not Found Excel</a>
-    </div>
-    {% endif %}
-</div>
+<h3 class="text-center mt-3">Highlight Tool</h3>
+<form method="POST" enctype="multipart/form-data" class="mt-4 text-center">
+  <input type="file" name="pdf" required><br><br>
+  <input type="file" name="excel" required><br><br>
+  <button type="submit" class="btn btn-success">Highlight</button>
+</form>
 {% endblock %}
