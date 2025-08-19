@@ -71,7 +71,8 @@ footer {
 }
 
 /* Modal styling */
-.modal-body p { font-size: 18px; margin-bottom: 20px; }
+.modal-body p { font-size: 16px; margin-bottom: 20px; }
+.modal-dialog { max-width: 350px; } /* Chhota modal */
 </style>
 </head>
 <body>
@@ -114,6 +115,7 @@ footer {
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="subscriptionModalLabel">Subscribe to Continue</h5>
+        <!-- Close button × -->
         <button type="button" class="btn-close" id="closeModalBtn" aria-label="Close"></button>
       </div>
       <div class="modal-body text-center">
@@ -139,7 +141,7 @@ var subscriptionModal = new bootstrap.Modal(document.getElementById('subscriptio
 subscriptionModal.show();
 {% endif %}
 
-// Close button functionality
+// Close button functionality ×
 document.getElementById('closeModalBtn').addEventListener('click', function() {
     subscriptionModal.hide();
 });
