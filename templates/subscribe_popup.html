@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="popup" id="subscription-popup" style="display:flex;">
+    <div class="popup-content">
+        <h3>Subscribe to Continue</h3>
+        <p>To highlight your PDF, you need an active subscription.</p>
+
+        <!-- Razorpay Payment Link -->
+        <a href="https://rzp.io/rzp/rCYKl98" class="btn btn-primary w-100 mb-2">Subscribe ₹49/Month</a>
+
+        <!-- Cancel Button -->
+        <button id="cancel-btn" class="btn btn-danger w-100">Cancel</button>
+    </div>
+</div>
+
+<script>
+document.getElementById('cancel-btn').addEventListener('click', function() {
+    document.getElementById('subscription-popup').style.display = 'none';
+});
+</script>
+{% endblock %}
