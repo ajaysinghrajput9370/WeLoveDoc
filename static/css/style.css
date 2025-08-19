@@ -4,8 +4,6 @@ body {
     padding:0;
     background:none;
 }
-
-/* Top strip */
 .top-strip {
     background:white;
     height:70px;
@@ -19,32 +17,17 @@ body {
     width:100%;
     z-index:1000;
 }
-
 .top-strip .logo img {
     height:80px;
 }
-
-/* Middle strip */
-.middle-strip {
-    background:#ff4d4d;
-    color:white;
-    padding:15px 20px;
-    font-weight:bold;
-    margin-top:70px;
-}
-
-/* Main page content */
 .page-content {
-    margin:20px auto;
+    margin:100px auto 80px;
     width:60%;
     background:white;
     padding:25px;
     border-radius:15px;
     box-shadow:0 5px 15px rgba(0,0,0,0.2);
-    margin-bottom:70px;
 }
-
-/* Bottom strip */
 .bottom-strip {
     background:white;
     color:#333;
@@ -57,21 +40,11 @@ body {
     z-index:1000;
     box-shadow:0 -2px 5px rgba(0,0,0,0.1);
 }
-
-/* Upload section */
 .upload-container label {
     display:block;
     margin:15px 0;
     font-weight:bold;
 }
-
-.upload-container form small {
-    font-weight:normal;
-    display:block;
-    margin-top:5px;
-    color:#555;
-}
-
 .upload-container button {
     margin-top:15px;
     padding:12px 25px;
@@ -82,16 +55,6 @@ body {
     border:none;
     border-radius:5px;
 }
-
-.uploaded-info {
-    background:#cce5ff;
-    padding:15px;
-    border-radius:10px;
-    margin-top:20px;
-    text-align:left;
-}
-
-/* Popup */
 .popup {
     display:none;
     position:fixed;
@@ -103,7 +66,6 @@ body {
     justify-content:center;
     align-items:center;
 }
-
 .popup-content {
     background:white;
     padding:25px;
@@ -111,7 +73,6 @@ body {
     text-align:center;
     width:350px;
 }
-
 .popup-content button {
     margin:10px;
     padding:10px 20px;
@@ -119,12 +80,10 @@ body {
     border:none;
     border-radius:5px;
 }
-
 #subscribe-btn {
     background:#007BFF;
     color:white;
 }
-
 #cancel-btn {
     background:#dc3545;
     color:white;
