@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">PDF Highlight Tool</h2>
+
+    {% if not username %}
+        <!-- Not logged in -->
+        <p class="text-center text-danger">Please login to use the highlight tool.</p>
+        <div class="text-center mt-3">
+            <a href="{{ url_for('login') }}" class="btn btn-outline-primary me-2">Login</a>
+            <a href="{{ url_for('signup') }}" class="btn btn-primary text-white">Sign Up</a>
+        </div>
+    {% else %}
+        <p class="text-center mb-3">Welcome, <b>{{ username }}</b> 🎉</p>
+
+        {% if not subscribed %}
+            <!-- Not subscribed -->
+            <p class="text-center text-warning">You need an active subscription to highlight PDFs.</p>
+            <div class="text-center mt-3">
+                <a href="{{ url_for('subscribe') }}" class="btn btn-success">Subscribe ₹49/Month</a>
+            </div>
+        {% else %}
+            <!-- Highlight Form -->
+            <form method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data" class="mx-auto" style="max-width:500px;">
+                <div class="mb-3">
+                    <label for="pdf" class="form-label">Upload PDF</label>
+                    <input type="file" class="form-control" id="pdf" name="pdf" accept=".pdf" required>
+                </div>
+                <div class="mb-3">
+                    <label for="excel" class="form-label">Upload Excel</label>
+                    <input type="file" class="form-control" id="excel" name="excel" accept=".xlsx,.xls" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Highlight PDF</button>
+            </form>
+        {% endif %}
+    {% endif %}
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-info mt-4 text-center">
+          {% for message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+</div>
+{% endblock %}
