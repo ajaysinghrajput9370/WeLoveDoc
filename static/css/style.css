@@ -2,12 +2,12 @@ body {
     font-family: Arial, sans-serif;
     margin:0;
     padding:0;
-    background:none;       /* background remove, strip ke alawa transparent */
+    background:none;
 }
 
 /* Top strip */
 .top-strip {
-    background:white;      /* ✅ Top strip white */
+    background:white;
     height:70px;
     display:flex;
     justify-content:space-between;
@@ -24,13 +24,13 @@ body {
     height:80px;
 }
 
-/* Middle strip (optional) */
+/* Middle strip */
 .middle-strip {
     background:#ff4d4d;
     color:white;
     padding:15px 20px;
     font-weight:bold;
-    margin-top:70px; /* below fixed top strip */
+    margin-top:70px;
 }
 
 /* Main page content */
@@ -41,13 +41,13 @@ body {
     padding:25px;
     border-radius:15px;
     box-shadow:0 5px 15px rgba(0,0,0,0.2);
-    margin-bottom:70px; /* space for bottom fixed strip */
+    margin-bottom:70px;
 }
 
 /* Bottom strip */
 .bottom-strip {
-    background:white;      /* ✅ Bottom strip white */
-    color:#333;            /* ✅ Text dark for contrast */
+    background:white;
+    color:#333;
     text-align:center;
     padding:15px 0;
     position:fixed;
@@ -55,7 +55,7 @@ body {
     width:100%;
     font-size:14px;
     z-index:1000;
-    box-shadow:0 -2px 5px rgba(0,0,0,0.1); /* light shadow */
+    box-shadow:0 -2px 5px rgba(0,0,0,0.1);
 }
 
 /* Upload section */
