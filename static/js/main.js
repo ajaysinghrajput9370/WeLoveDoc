@@ -5,7 +5,4 @@ $(document).ready(function(){
     alert('Subscription successful!');
     $('#subscription-popup').hide();
   });
-  $('input[name="highlight_type"]').change(function(){
-    $('#highlight_type').val($(this).val());
-  });
 });
