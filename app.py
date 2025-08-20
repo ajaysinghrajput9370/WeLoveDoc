@@ -9,7 +9,9 @@ app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
 DB_NAME = "users.db"
-
+@app.route("/download/<path:filename>")
+def download_file(filename):
+    return send_from_directory(RESULTS_FOLDER, os.path.basename(filename), as_attachment=True)
 # ---------------- DATABASE INIT ----------------
 def init_db():
     with sqlite3.connect(DB_NAME) as conn:
@@ -163,3 +165,4 @@ def process_files(pdf_path, excel_path, highlight_type="uan"):
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
+
