@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+
+  <div class="card shadow-lg border-0 p-4" style="border-radius:15px; background:#ffffff;">
+    <h2 class="text-center mb-4" style="color:#e63946; font-weight:bold;">Select Tool & Upload Files</h2>
+
+    <!-- Tool radio buttons -->
+    <div class="d-flex justify-content-center gap-4 mb-4">
+      <div>
+        <input type="radio" class="btn-check" name="tool" value="uan" id="uan" onclick="showUpload()" checked>
+        <label class="btn btn-outline-danger px-4 py-2" for="uan">UAN Highlight</label>
+      </div>
+
+      <div>
+        <input type="radio" class="btn-check" name="tool" value="esic" id="esic" onclick="showUpload()">
+        <label class="btn btn-outline-danger px-4 py-2" for="esic">ESIC Highlight (Full Row)</label>
+      </div>
+    </div>
+
+    <!-- Upload Section -->
+    <form method="POST" enctype="multipart/form-data" id="upload-form" class="text-center">
+      <input type="hidden" name="tool" id="selected-tool" value="uan">
+
+      <div class="mb-3">
+        <label class="form-label fw-bold">Select PDF</label>
+        <input type="file" class="form-control" name="pdf" accept=".pdf" required>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-bold">Select Excel</label>
+        <input type="file" class="form-control" name="excel" accept=".xls,.xlsx" required>
+      </div>
+
+      <button type="submit" class="btn w-100" 
+              style="padding:12px; font-size:18px; background:linear-gradient(90deg, #e63946, #d62828); 
+                     color:white; border-radius:10px; font-weight:bold; box-shadow:0 5px 12px rgba(0,0,0,0.2);">
+        Highlight
+      </button>
+    </form>
+
+    <!-- Download Links -->
+    {% if result_pdf %}
+    <div class="mt-4 text-center">
+      <a href="{{ url_for('static', filename='results/' + result_pdf) }}" 
+         class="btn btn-success me-3 px-4 py-2" download>
+         Download Highlighted PDF
+      </a>
+      <a href="{{ url_for('static', filename='results/' + not_found_excel) }}" 
+         class="btn btn-secondary px-4 py-2" download>
+         Download Not Found Excel
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+function showUpload() {
+    const tool = document.querySelector('input[name="tool"]:checked').value;
+    document.getElementById('selected-tool').value = tool;
+}
+</script>
+{% endblock %}
